@@ -1,11 +1,28 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "@/store/authStore";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, isLoading } = useAuthStore();
+  
+  useEffect(() => {
+    if (!isLoading) {
+      if (isAuthenticated) {
+        navigate("/");
+      } else {
+        navigate("/login");
+      }
+    }
+  }, [isAuthenticated, isLoading, navigate]);
+  
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+        <h1 className="text-4xl font-bold text-gradient mb-4">HDS CONECTE</h1>
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+        <p className="text-lg text-muted-foreground mt-4">Carregando...</p>
       </div>
     </div>
   );
