@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
@@ -53,12 +54,15 @@ interface AuthState {
 const mapSupabaseUser = (supabaseUser: SupabaseUser | null, profile: Profile | null): User | null => {
   if (!supabaseUser) return null;
 
+  // Define dev admin emails - this allows for more flexibility and easier management
+  const devAdminEmails = ['elielvalentim.dev@gmail.com', 'eliel2003br@gmail.com'];
+  
   return {
     id: supabaseUser.id,
     email: supabaseUser.email || '',
     name: profile?.name || supabaseUser.email?.split('@')[0] || '',
     photoURL: profile?.photo_url,
-    role: supabaseUser.email === 'elielvalentim.dev@gmail.com' ? 'dev-admin' : 'user'
+    role: devAdminEmails.includes(supabaseUser.email || '') ? 'dev-admin' : 'user'
   };
 };
 
