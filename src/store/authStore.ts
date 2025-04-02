@@ -3,7 +3,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User as SupabaseUser } from '@supabase/supabase-js';
+import { Database } from '@/integrations/supabase/types';
 
 export type UserRole = 'user' | 'admin' | 'dev-admin';
 
@@ -32,7 +33,7 @@ interface CompanyInfo {
 
 interface AuthState {
   user: User | null;
-  supabaseUser: User | null;
+  supabaseUser: SupabaseUser | null;
   session: Session | null;
   profile: Profile | null;
   isAuthenticated: boolean;
@@ -50,7 +51,7 @@ interface AuthState {
 }
 
 // Function to map Supabase user to our User interface
-const mapSupabaseUser = (supabaseUser: User | null, profile: Profile | null): User | null => {
+const mapSupabaseUser = (supabaseUser: SupabaseUser | null, profile: Profile | null): User | null => {
   if (!supabaseUser) return null;
 
   return {

@@ -24,6 +24,14 @@ interface Event {
   location: string | null;
 }
 
+interface Registration {
+  id: string;
+  user_id: string;
+  event_id: string;
+  status: string;
+  created_at: string;
+}
+
 const Registration = () => {
   const { user, profile } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
@@ -112,7 +120,7 @@ const Registration = () => {
     
     try {
       // Update profile information
-      await supabase
+      const { error: updateError } = await supabase
         .from('profiles')
         .update({
           name: formData.fullName,
@@ -121,6 +129,10 @@ const Registration = () => {
           responsible_pastor: formData.pastor
         })
         .eq('id', user.id);
+        
+      if (updateError) {
+        throw updateError;
+      }
       
       // Register for the event
       const { error } = await supabase

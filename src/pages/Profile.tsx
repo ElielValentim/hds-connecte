@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Camera, Mail, Phone, MapPin, Link as LinkIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,7 +23,6 @@ const Profile = () => {
     whatsapp: ''
   });
   
-  // Update local state when profile changes in the store
   useEffect(() => {
     setProfileData(prev => ({
       ...prev,
@@ -71,12 +69,10 @@ const Profile = () => {
     if (!file || !user) return;
     
     try {
-      // Create a unique file name
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
       
-      // Upload the file to Supabase storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file);
@@ -85,12 +81,10 @@ const Profile = () => {
         throw uploadError;
       }
       
-      // Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
       
-      // Update the profile with the new avatar URL
       const success = await updateProfile({ photo_url: publicUrl });
       
       if (success) {
