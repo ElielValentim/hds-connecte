@@ -4,6 +4,8 @@ import { createContext, useContext, useEffect, ReactNode } from 'react';
 
 interface ThemeProviderProps {
   children: ReactNode;
+  defaultTheme?: string;
+  forcedTheme?: string;
 }
 
 interface ThemeProviderState {
@@ -18,6 +20,8 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
 export function ThemeProvider({
   children,
+  defaultTheme,
+  forcedTheme,
   ...props
 }: ThemeProviderProps) {
   useEffect(() => {
