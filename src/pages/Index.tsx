@@ -8,11 +8,9 @@ const Index = () => {
   const { isAuthenticated, isLoading, refreshSession } = useAuthStore();
   
   useEffect(() => {
-    // Only attempt to refresh the session once
     const checkAuth = async () => {
       await refreshSession();
       
-      // After refreshing, check authentication status
       if (!isLoading) {
         if (isAuthenticated) {
           navigate("/");

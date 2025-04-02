@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
@@ -41,10 +40,8 @@ interface AuthState {
   companyInfo: CompanyInfo;
   
   // Actions
-  login: (email: string, password: string) => Promise<{success: boolean, error?: string}>;
-  signup: (email: string, password: string, name: string) => Promise<{success: boolean, error?: string}>;
+  signInWithGoogle: () => Promise<{success: boolean, error?: string}>;
   logout: () => Promise<void>;
-  recoverPassword: (email: string) => Promise<boolean>;
   updateProfile: (userData: Partial<Profile>) => Promise<boolean>;
   updateCompanyInfo: (data: Partial<CompanyInfo>) => Promise<boolean>;
   refreshSession: () => Promise<void>;
@@ -118,97 +115,32 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       
-      login: async (email: string, password: string) => {
+      signInWithGoogle: async () => {
         set({ isLoading: true });
         
         try {
-          console.log('Attempting login for:', email);
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password
-          });
-          
-          if (error) {
-            console.error('Login error:', error.message);
-            set({ isLoading: false });
-            return { success: false, error: error.message };
-          }
-          
-          const { session, user: supabaseUser } = data;
-          
-          if (!session || !supabaseUser) {
-            console.error('Login failed: No session or user returned');
-            set({ isLoading: false });
-            return { success: false, error: 'Falha ao fazer login. Dados de autenticação inválidos.' };
-          }
-          
-          console.log('Login successful, fetching profile data for user:', supabaseUser.id);
-          
-          // Fetch profile data
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', supabaseUser.id)
-            .maybeSingle();
-          
-          if (profileError) {
-            console.error('Error fetching profile:', profileError);
-          }
-          
-          const mappedUser = mapSupabaseUser(supabaseUser, profileData || null);
-          console.log('User mapped:', mappedUser);
-          
-          set({
-            session,
-            supabaseUser,
-            profile: profileData || null,
-            user: mappedUser,
-            isAuthenticated: true,
-            isLoading: false
-          });
-          
-          return { success: true };
-        } catch (error: any) {
-          console.error('Login error:', error);
-          set({ isLoading: false });
-          return { success: false, error: error?.message || 'Falha ao fazer login. Por favor, tente novamente.' };
-        }
-      },
-      
-      signup: async (email: string, password: string, name: string) => {
-        set({ isLoading: true });
-        
-        try {
-          const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
+          console.log('Attempting login with Google');
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
             options: {
-              data: {
-                name
-              },
-              emailRedirectTo: `${window.location.origin}/login`,
+              redirectTo: `${window.location.origin}/login`,
             }
           });
           
           if (error) {
+            console.error('Google login error:', error.message);
             set({ isLoading: false });
             return { success: false, error: error.message };
           }
           
-          const { user: supabaseUser } = data;
+          // For OAuth, we don't need to set session here as it will be handled by the redirect
+          console.log('Google authentication initiated:', data);
           
-          if (supabaseUser) {
-            // We'll rely on the trigger to create the profile
-            console.log('User created, profile will be created by trigger');
-          }
-          
-          set({ isLoading: false });
-          toast.success('Conta criada com sucesso! Verifique seu email para confirmar seu cadastro.');
           return { success: true };
         } catch (error: any) {
-          console.error('Signup error:', error);
+          console.error('Google login error:', error);
           set({ isLoading: false });
-          return { success: false, error: error?.message || 'Falha ao criar conta. Por favor, tente novamente.' };
+          return { success: false, error: error?.message || 'Falha ao fazer login com Google. Por favor, tente novamente.' };
         }
       },
       
@@ -232,31 +164,6 @@ export const useAuthStore = create<AuthState>()(
           console.error('Logout error:', error);
           toast.error('Falha ao fazer logout. Por favor, tente novamente.');
           set({ isLoading: false });
-        }
-      },
-      
-      recoverPassword: async (email: string) => {
-        set({ isLoading: true });
-        
-        try {
-          const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/reset-password`,
-          });
-          
-          if (error) {
-            toast.error(error.message);
-            set({ isLoading: false });
-            return false;
-          }
-          
-          toast.success('Email de recuperação enviado. Por favor, verifique sua caixa de entrada.');
-          set({ isLoading: false });
-          return true;
-        } catch (error) {
-          console.error('Password recovery error:', error);
-          toast.error('Falha ao enviar email de recuperação. Por favor, tente novamente.');
-          set({ isLoading: false });
-          return false;
         }
       },
       
