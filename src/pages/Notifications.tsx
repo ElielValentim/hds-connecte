@@ -6,8 +6,18 @@ import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/components/layout/AppLayout';
 import { toast } from 'sonner';
 
+// Define the notification type with proper type literals
+interface NotificationType {
+  id: string;
+  title: string;
+  message: string;
+  timestamp: Date;
+  read: boolean;
+  type: 'event' | 'challenge' | 'social' | 'system';
+}
+
 // Mock data for notifications - would come from Firebase in a real app
-const initialNotifications = [
+const initialNotifications: NotificationType[] = [
   {
     id: '1',
     title: 'Nova Inscrição Aberta',
@@ -49,15 +59,6 @@ const initialNotifications = [
     type: 'system'
   }
 ];
-
-interface NotificationType {
-  id: string;
-  title: string;
-  message: string;
-  timestamp: Date;
-  read: boolean;
-  type: 'event' | 'challenge' | 'social' | 'system';
-}
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState<NotificationType[]>(initialNotifications);
