@@ -7,48 +7,47 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/store/authStore';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
+
+// Define validation schema
+const loginSchema = z.object({
+  email: z.string().email('Email inválido').min(1, 'Email é obrigatório'),
+  password: z.string().min(1, 'Senha é obrigatória'),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState({ email: '', password: '' });
-  
   const { login, isLoading } = useAuthStore();
   const navigate = useNavigate();
-  
-  const validateForm = () => {
-    let isValid = true;
-    const newErrors = { email: '', password: '' };
-    
-    if (!email) {
-      newErrors.email = 'Email é obrigatório';
-      isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email inválido';
-      isValid = false;
-    }
-    
-    if (!password) {
-      newErrors.password = 'Senha é obrigatória';
-      isValid = false;
-    }
-    
-    setErrors(newErrors);
-    return isValid;
-  };
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-    
-    const success = await login(email, password);
-    if (success) {
-      navigate('/');
+
+  // Initialize form with validation
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
+
+  const onSubmit = async (data: LoginFormValues) => {
+    try {
+      const success = await login(data.email, data.password);
+      if (success) {
+        toast.success('Login realizado com sucesso!');
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error('Ocorreu um erro durante o login. Tente novamente.');
     }
   };
-  
+
   return (
     <div className="flex min-h-screen flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 bg-muted/30">
       <div className="w-full max-w-md mx-auto">
@@ -64,79 +63,89 @@ const Login = () => {
               Acesse sua conta para continuar
             </CardDescription>
           </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading}
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="seu@email.com"
+                          disabled={isLoading}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {errors.email && (
-                  <p className="text-destructive text-sm">{errors.email}</p>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={isLoading}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </Button>
+                
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="••••••••"
+                            disabled={isLoading}
+                            {...field}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="text-right">
+                  <Link to="/recover-password" className="text-sm text-primary hover:underline">
+                    Esqueceu a senha?
+                  </Link>
                 </div>
-                {errors.password && (
-                  <p className="text-destructive text-sm">{errors.password}</p>
-                )}
-              </div>
+              </CardContent>
               
-              <div className="text-right">
-                <Link to="/recover-password" className="text-sm text-primary hover:underline">
-                  Esqueceu a senha?
-                </Link>
-              </div>
-            </CardContent>
-            
-            <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <span className="flex items-center gap-2">
-                    <span className="animate-spin rounded-full h-4 w-4 border-2 border-b-transparent border-white"></span>
-                    Entrando...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <LogIn size={18} />
-                    Entrar
-                  </span>
-                )}
-              </Button>
-              
-              <p className="text-sm text-muted-foreground text-center">
-                Não tem uma conta?{' '}
-                <Link to="/signup" className="text-primary hover:underline">
-                  Criar conta
-                </Link>
-              </p>
-            </CardFooter>
-          </form>
+              <CardFooter className="flex flex-col space-y-4">
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="animate-spin rounded-full h-4 w-4 border-2 border-b-transparent border-white"></span>
+                      Entrando...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <LogIn size={18} />
+                      Entrar
+                    </span>
+                  )}
+                </Button>
+                
+                <p className="text-sm text-muted-foreground text-center">
+                  Não tem uma conta?{' '}
+                  <Link to="/signup" className="text-primary hover:underline">
+                    Criar conta
+                  </Link>
+                </p>
+              </CardFooter>
+            </form>
+          </Form>
         </Card>
       </div>
     </div>
