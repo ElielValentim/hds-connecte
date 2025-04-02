@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { Camera, Mail, Phone, MapPin, Link as LinkIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,20 +8,32 @@ import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/components/layout/AppLayout';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const Profile = () => {
-  const { user, updateProfile, isLoading } = useAuthStore();
+  const { user, profile, updateProfile, isLoading } = useAuthStore();
   
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
-    name: user?.name || '',
-    bio: 'Membro da HDS',
-    phone: '',
-    church: '',
+    name: profile?.name || user?.name || '',
+    phone: profile?.phone || '',
+    church: profile?.church || '',
+    responsible_pastor: profile?.responsible_pastor || '',
     instagram: '',
     facebook: '',
     whatsapp: ''
   });
+  
+  // Update local state when profile changes in the store
+  useEffect(() => {
+    setProfileData(prev => ({
+      ...prev,
+      name: profile?.name || user?.name || '',
+      phone: profile?.phone || '',
+      church: profile?.church || '',
+      responsible_pastor: profile?.responsible_pastor || ''
+    }));
+  }, [profile, user]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -31,8 +44,10 @@ const Profile = () => {
     if (isLoading) return;
     
     const success = await updateProfile({
-      name: profileData.name
-      // Other fields would be saved to Firestore in a real implementation
+      name: profileData.name,
+      phone: profileData.phone,
+      church: profileData.church,
+      responsible_pastor: profileData.responsible_pastor
     });
     
     if (success) {
@@ -44,8 +59,47 @@ const Profile = () => {
     setIsEditing(false);
     setProfileData({
       ...profileData,
-      name: user?.name || ''
+      name: profile?.name || user?.name || '',
+      phone: profile?.phone || '',
+      church: profile?.church || '',
+      responsible_pastor: profile?.responsible_pastor || ''
     });
+  };
+  
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    
+    try {
+      // Create a unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+      
+      // Upload the file to Supabase storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+      
+      if (uploadError) {
+        throw uploadError;
+      }
+      
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+      
+      // Update the profile with the new avatar URL
+      const success = await updateProfile({ photo_url: publicUrl });
+      
+      if (success) {
+        toast.success('Foto de perfil atualizada com sucesso');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Falha ao fazer upload da imagem. Por favor, tente novamente.');
+    }
   };
   
   return (
@@ -55,20 +109,26 @@ const Profile = () => {
           <div className="relative">
             <div className="w-24 h-24 rounded-full overflow-hidden bg-muted mb-4">
               <img
-                src={user?.photoURL || 'https://via.placeholder.com/100?text=User'}
+                src={profile?.photo_url || user?.photoURL || 'https://via.placeholder.com/100?text=User'}
                 alt="Profile"
                 className="w-full h-full object-cover"
               />
             </div>
             {isEditing && (
-              <Button
-                size="icon"
-                variant="secondary"
-                className="absolute bottom-0 right-0 rounded-full"
-                onClick={() => toast.info('A funcionalidade de upload de imagem será implementada com o Firebase Storage')}
-              >
-                <Camera size={18} />
-              </Button>
+              <div className="absolute bottom-0 right-0 rounded-full">
+                <label htmlFor="avatar-upload" className="cursor-pointer">
+                  <div className="bg-secondary text-secondary-foreground h-8 w-8 rounded-full flex items-center justify-center">
+                    <Camera size={18} />
+                  </div>
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             )}
           </div>
           
@@ -85,10 +145,10 @@ const Profile = () => {
               />
             </div>
           ) : (
-            <h1 className="text-2xl font-semibold">{user?.name}</h1>
+            <h1 className="text-2xl font-semibold">{profileData.name}</h1>
           )}
           
-          <p className="text-muted-foreground mt-1">{profileData.bio}</p>
+          <p className="text-muted-foreground mt-1">Membro da HDS</p>
           
           {isEditing ? (
             <div className="flex gap-2 mt-4">
@@ -149,6 +209,24 @@ const Profile = () => {
                 <div className="flex items-center gap-3">
                   <MapPin className="text-muted-foreground" size={18} />
                   <span>{profileData.church}</span>
+                </div>
+              )}
+              
+              {isEditing ? (
+                <div className="space-y-2">
+                  <Label htmlFor="responsible_pastor">Pastor Responsável</Label>
+                  <Input
+                    id="responsible_pastor"
+                    name="responsible_pastor"
+                    value={profileData.responsible_pastor}
+                    onChange={handleChange}
+                    placeholder="Nome do pastor"
+                  />
+                </div>
+              ) : profileData.responsible_pastor && (
+                <div className="flex items-center gap-3">
+                  <MapPin className="text-muted-foreground" size={18} />
+                  <span>{profileData.responsible_pastor}</span>
                 </div>
               )}
             </CardContent>

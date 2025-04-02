@@ -1,68 +1,76 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bell, X, CheckCheck, AlertCircle, Info, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/components/layout/AppLayout';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuthStore } from '@/store/authStore';
 
 // Define the notification type with proper type literals
 interface NotificationType {
   id: string;
   title: string;
   message: string;
-  timestamp: Date;
+  created_at: string;
   read: boolean;
   type: 'event' | 'challenge' | 'social' | 'system';
 }
 
-// Mock data for notifications - would come from Firebase in a real app
-const initialNotifications: NotificationType[] = [
-  {
-    id: '1',
-    title: 'Nova Inscrição Aberta',
-    message: 'Inscrições para a Assembleia Geral de Dezembro estão abertas! Não perca o prazo.',
-    timestamp: new Date(2023, 11, 1, 9, 30), // Dec 1, 2023, 9:30 AM
-    read: false,
-    type: 'event'
-  },
-  {
-    id: '2',
-    title: 'Novos Desafios da Gincana',
-    message: 'Confira os novos desafios disponíveis na seção Gincana e ganhe mais pontos!',
-    timestamp: new Date(2023, 10, 28, 14, 15), // Nov 28, 2023, 2:15 PM
-    read: true,
-    type: 'challenge'
-  },
-  {
-    id: '3',
-    title: 'Seu vídeo foi curtido',
-    message: 'Maria Oliveira curtiu seu vídeo "Testemunho - Transformação de Vida"',
-    timestamp: new Date(2023, 10, 25, 20, 45), // Nov 25, 2023, 8:45 PM
-    read: false,
-    type: 'social'
-  },
-  {
-    id: '4',
-    title: 'Lembrete de Evento',
-    message: 'O encontro de jovens acontecerá amanhã às 19h no salão principal.',
-    timestamp: new Date(2023, 10, 22, 10, 0), // Nov 22, 2023, 10:00 AM
-    read: false,
-    type: 'event'
-  },
-  {
-    id: '5',
-    title: 'Atualização do Aplicativo',
-    message: 'Uma nova versão do HDS Conecte está disponível. Atualize para acessar os novos recursos.',
-    timestamp: new Date(2023, 10, 18, 12, 30), // Nov 18, 2023, 12:30 PM
-    read: true,
-    type: 'system'
-  }
-];
-
 const Notifications = () => {
-  const [notifications, setNotifications] = useState<NotificationType[]>(initialNotifications);
+  const { user } = useAuthStore();
+  const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [filter, setFilter] = useState<string>('all');
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Fetch notifications from Supabase
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .or(`user_id.eq.${user.id},user_id.is.null`)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching notifications:', error);
+          return;
+        }
+        
+        setNotifications(data as NotificationType[]);
+      } catch (error) {
+        console.error('Error in fetchNotifications:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchNotifications();
+    
+    // Set up a subscription for real-time updates
+    const channel = supabase
+      .channel('notifications-changes')
+      .on('postgres_changes', 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'notifications',
+          filter: `user_id=eq.${user?.id}`
+        }, 
+        (payload) => {
+          setNotifications(prev => [payload.new as NotificationType, ...prev]);
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
   
   const getIcon = (type: string) => {
     switch (type) {
@@ -79,36 +87,80 @@ const Notifications = () => {
     }
   };
   
-  const handleMarkAsRead = (id: string) => {
-    setNotifications(prev =>
-      prev.map(notification =>
-        notification.id === id
-          ? { ...notification, read: true }
-          : notification
-      )
-    );
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error marking notification as read:', error);
+        return;
+      }
+      
+      setNotifications(prev =>
+        prev.map(notification =>
+          notification.id === id
+            ? { ...notification, read: true }
+            : notification
+        )
+      );
+    } catch (error) {
+      console.error('Error in handleMarkAsRead:', error);
+    }
   };
   
-  const handleMarkAllAsRead = () => {
-    setNotifications(prev =>
-      prev.map(notification => ({ ...notification, read: true }))
-    );
-    toast.success('Todas as notificações marcadas como lidas');
+  const handleMarkAllAsRead = async () => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .or(`user_id.eq.${user.id},user_id.is.null`)
+        .eq('read', false);
+      
+      if (error) {
+        console.error('Error marking all notifications as read:', error);
+        return;
+      }
+      
+      setNotifications(prev =>
+        prev.map(notification => ({ ...notification, read: true }))
+      );
+      
+      toast.success('Todas as notificações marcadas como lidas');
+    } catch (error) {
+      console.error('Error in handleMarkAllAsRead:', error);
+    }
   };
   
-  const handleDelete = (id: string) => {
-    setNotifications(prev =>
-      prev.filter(notification => notification.id !== id)
-    );
-    toast.success('Notificação removida');
+  const handleDelete = async (id: string) => {
+    try {
+      // In a real app, you might just hide the notification instead of deleting it
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error deleting notification:', error);
+        return;
+      }
+      
+      setNotifications(prev =>
+        prev.filter(notification => notification.id !== id)
+      );
+      
+      toast.success('Notificação removida');
+    } catch (error) {
+      console.error('Error in handleDelete:', error);
+    }
   };
   
-  const handleClearAll = () => {
-    setNotifications([]);
-    toast.success('Todas as notificações foram removidas');
-  };
-  
-  const formatTimestamp = (date: Date) => {
+  const formatTimestamp = (dateString: string) => {
+    const date = new Date(dateString);
     const now = new Date();
     const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
     
@@ -194,7 +246,14 @@ const Notifications = () => {
         
         {/* Notifications List */}
         <div className="space-y-3">
-          {filteredNotifications.length > 0 ? (
+          {isLoading ? (
+            <Card>
+              <CardContent className="p-10 flex flex-col items-center justify-center text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                <p className="text-muted-foreground">Carregando notificações...</p>
+              </CardContent>
+            </Card>
+          ) : filteredNotifications.length > 0 ? (
             filteredNotifications.map(notification => (
               <Card
                 key={notification.id}
@@ -211,7 +270,7 @@ const Notifications = () => {
                           {notification.title}
                         </h3>
                         <span className="text-xs text-muted-foreground">
-                          {formatTimestamp(notification.timestamp)}
+                          {formatTimestamp(notification.created_at)}
                         </span>
                       </div>
                       <p className="text-sm mt-1">{notification.message}</p>
@@ -252,18 +311,6 @@ const Notifications = () => {
             </Card>
           )}
         </div>
-        
-        {notifications.length > 0 && (
-          <div className="text-center pt-4">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleClearAll}
-            >
-              Limpar todas as notificações
-            </Button>
-          </div>
-        )}
       </div>
     </AppLayout>
   );

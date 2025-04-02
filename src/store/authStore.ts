@@ -2,6 +2,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { Session, User } from '@supabase/supabase-js';
 
 export type UserRole = 'user' | 'admin' | 'dev-admin';
 
@@ -13,6 +15,15 @@ export interface User {
   role: UserRole;
 }
 
+interface Profile {
+  id: string;
+  name: string;
+  phone?: string;
+  church?: string;
+  responsible_pastor?: string;
+  photo_url?: string;
+}
+
 interface CompanyInfo {
   name: string;
   logo: string;
@@ -21,6 +32,9 @@ interface CompanyInfo {
 
 interface AuthState {
   user: User | null;
+  supabaseUser: User | null;
+  session: Session | null;
+  profile: Profile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   companyInfo: CompanyInfo;
@@ -28,17 +42,33 @@ interface AuthState {
   // Actions
   login: (email: string, password: string) => Promise<boolean>;
   signup: (email: string, password: string, name: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   recoverPassword: (email: string) => Promise<boolean>;
-  updateProfile: (userData: Partial<User>) => Promise<boolean>;
+  updateProfile: (userData: Partial<Profile>) => Promise<boolean>;
   updateCompanyInfo: (data: Partial<CompanyInfo>) => Promise<boolean>;
+  refreshSession: () => Promise<void>;
 }
 
-// Mock implementation - would be replaced with Firebase in a real implementation
+// Function to map Supabase user to our User interface
+const mapSupabaseUser = (supabaseUser: User | null, profile: Profile | null): User | null => {
+  if (!supabaseUser) return null;
+
+  return {
+    id: supabaseUser.id,
+    email: supabaseUser.email || '',
+    name: profile?.name || supabaseUser.email?.split('@')[0] || '',
+    photoURL: profile?.photo_url,
+    role: supabaseUser.email === 'elielvalentim.dev@gmail.com' ? 'dev-admin' : 'user'
+  };
+};
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
+      supabaseUser: null,
+      session: null,
+      profile: null,
       isAuthenticated: false,
       isLoading: false,
       companyInfo: {
@@ -46,52 +76,79 @@ export const useAuthStore = create<AuthState>()(
         logo: '/placeholder.svg',
         contactLink: 'https://valensoft.com',
       },
+
+      refreshSession: async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            const { user: supabaseUser } = session;
+            
+            // Fetch profile data
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', supabaseUser.id)
+              .single();
+            
+            set({
+              session,
+              supabaseUser,
+              profile: profileData || null,
+              user: mapSupabaseUser(supabaseUser, profileData),
+              isAuthenticated: true
+            });
+          } else {
+            set({
+              session: null,
+              supabaseUser: null,
+              profile: null,
+              user: null,
+              isAuthenticated: false
+            });
+          }
+        } catch (error) {
+          console.error('Error refreshing session:', error);
+        }
+      },
       
       login: async (email: string, password: string) => {
         set({ isLoading: true });
         
         try {
-          // Simulate API call delay
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
           
-          // Check if it's the dev admin account
-          if (email === 'elielvalentim.dev@gmail.com' && password === 'Eliel2003!') {
-            set({
-              user: {
-                id: 'dev-admin-id',
-                email,
-                name: 'Dev Admin',
-                role: 'dev-admin'
-              },
-              isAuthenticated: true,
-              isLoading: false
-            });
-            toast.success('Login successful!');
-            return true;
+          if (error) {
+            toast.error(error.message);
+            set({ isLoading: false });
+            return false;
           }
           
-          // For demo, allow any login with password length >= 6
-          if (password.length >= 6) {
-            set({
-              user: {
-                id: `user-${Date.now()}`,
-                email,
-                name: email.split('@')[0],
-                role: 'user'
-              },
-              isAuthenticated: true,
-              isLoading: false
-            });
-            toast.success('Login successful!');
-            return true;
-          }
+          const { session, user: supabaseUser } = data;
           
-          toast.error('Invalid credentials');
-          set({ isLoading: false });
-          return false;
+          // Fetch profile data
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', supabaseUser.id)
+            .single();
+          
+          set({
+            session,
+            supabaseUser,
+            profile: profileData || null,
+            user: mapSupabaseUser(supabaseUser, profileData),
+            isAuthenticated: true,
+            isLoading: false
+          });
+          
+          toast.success('Login realizado com sucesso!');
+          return true;
         } catch (error) {
           console.error('Login error:', error);
-          toast.error('Failed to login. Please try again.');
+          toast.error('Falha ao fazer login. Por favor, tente novamente.');
           set({ isLoading: false });
           return false;
         }
@@ -101,88 +158,137 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         
         try {
-          // Simulate API call delay
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                name
+              }
+            }
+          });
           
-          if (password.length >= 6) {
+          if (error) {
+            toast.error(error.message);
+            set({ isLoading: false });
+            return false;
+          }
+          
+          const { session, user: supabaseUser } = data;
+          
+          if (session) {
+            // If email confirmation is disabled, we'll have a session immediately
             set({
-              user: {
-                id: `user-${Date.now()}`,
-                email,
-                name,
-                role: 'user'
-              },
+              session,
+              supabaseUser,
+              profile: { id: supabaseUser?.id || '', name },
+              user: mapSupabaseUser(supabaseUser, { id: supabaseUser?.id || '', name }),
               isAuthenticated: true,
               isLoading: false
             });
-            toast.success('Account created successfully!');
+            
+            toast.success('Conta criada com sucesso!');
+            return true;
+          } else {
+            // If email confirmation is enabled
+            toast.success('Conta criada! Por favor, verifique seu email para confirmar o cadastro.');
+            set({ isLoading: false });
             return true;
           }
-          
-          toast.error('Password must be at least 6 characters');
-          set({ isLoading: false });
-          return false;
         } catch (error) {
           console.error('Signup error:', error);
-          toast.error('Failed to create account. Please try again.');
+          toast.error('Falha ao criar conta. Por favor, tente novamente.');
           set({ isLoading: false });
           return false;
         }
       },
       
-      logout: () => {
-        set({
-          user: null,
-          isAuthenticated: false
-        });
-        toast.success('Logged out successfully');
+      logout: async () => {
+        set({ isLoading: true });
+        
+        try {
+          await supabase.auth.signOut();
+          
+          set({
+            user: null,
+            supabaseUser: null,
+            session: null,
+            profile: null,
+            isAuthenticated: false,
+            isLoading: false
+          });
+          
+          toast.success('Logout realizado com sucesso');
+        } catch (error) {
+          console.error('Logout error:', error);
+          toast.error('Falha ao fazer logout. Por favor, tente novamente.');
+          set({ isLoading: false });
+        }
       },
       
       recoverPassword: async (email: string) => {
         set({ isLoading: true });
         
         try {
-          // Simulate API call delay
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/reset-password`,
+          });
           
-          toast.success('Recovery email sent. Please check your inbox.');
+          if (error) {
+            toast.error(error.message);
+            set({ isLoading: false });
+            return false;
+          }
+          
+          toast.success('Email de recuperação enviado. Por favor, verifique sua caixa de entrada.');
           set({ isLoading: false });
           return true;
         } catch (error) {
           console.error('Password recovery error:', error);
-          toast.error('Failed to send recovery email. Please try again.');
+          toast.error('Falha ao enviar email de recuperação. Por favor, tente novamente.');
           set({ isLoading: false });
           return false;
         }
       },
       
-      updateProfile: async (userData: Partial<User>) => {
+      updateProfile: async (userData: Partial<Profile>) => {
         set({ isLoading: true });
-        const currentUser = get().user;
+        const { supabaseUser, profile } = get();
         
-        if (!currentUser) {
-          toast.error('User not authenticated');
+        if (!supabaseUser) {
+          toast.error('Usuário não autenticado');
           set({ isLoading: false });
           return false;
         }
         
         try {
-          // Simulate API call delay
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          const { error } = await supabase
+            .from('profiles')
+            .update(userData)
+            .eq('id', supabaseUser.id);
+          
+          if (error) {
+            toast.error(error.message);
+            set({ isLoading: false });
+            return false;
+          }
+          
+          const updatedProfile = {
+            ...profile,
+            ...userData
+          } as Profile;
           
           set({
-            user: {
-              ...currentUser,
-              ...userData
-            },
+            profile: updatedProfile,
+            user: mapSupabaseUser(supabaseUser, updatedProfile),
             isLoading: false
           });
           
-          toast.success('Profile updated successfully');
+          toast.success('Perfil atualizado com sucesso');
           return true;
         } catch (error) {
           console.error('Profile update error:', error);
-          toast.error('Failed to update profile. Please try again.');
+          toast.error('Falha ao atualizar perfil. Por favor, tente novamente.');
           set({ isLoading: false });
           return false;
         }
@@ -193,15 +299,13 @@ export const useAuthStore = create<AuthState>()(
         const currentUser = get().user;
         
         if (!currentUser || currentUser.role !== 'dev-admin') {
-          toast.error('Unauthorized access');
+          toast.error('Acesso não autorizado');
           set({ isLoading: false });
           return false;
         }
         
         try {
-          // Simulate API call delay
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
+          // In a real implementation, this would be saved to Supabase
           set({
             companyInfo: {
               ...get().companyInfo,
@@ -210,11 +314,11 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false
           });
           
-          toast.success('Company information updated successfully');
+          toast.success('Informações da empresa atualizadas com sucesso');
           return true;
         } catch (error) {
           console.error('Company info update error:', error);
-          toast.error('Failed to update company information. Please try again.');
+          toast.error('Falha ao atualizar informações da empresa. Por favor, tente novamente.');
           set({ isLoading: false });
           return false;
         }
@@ -225,3 +329,16 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+// Initialize auth state on app load
+const initializeAuth = async () => {
+  const { refreshSession } = useAuthStore.getState();
+  await refreshSession();
+
+  // Set up auth state listener
+  supabase.auth.onAuthStateChange(async () => {
+    await refreshSession();
+  });
+};
+
+initializeAuth();
