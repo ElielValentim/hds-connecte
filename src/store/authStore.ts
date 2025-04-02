@@ -45,6 +45,8 @@ interface AuthState {
   updateProfile: (userData: Partial<Profile>) => Promise<boolean>;
   updateCompanyInfo: (data: Partial<CompanyInfo>) => Promise<boolean>;
   refreshSession: () => Promise<void>;
+  recoverPassword: (email: string) => Promise<boolean>;
+  signup: (email: string, password: string, name: string) => Promise<boolean>;
 }
 
 // Function to map Supabase user to our User interface
@@ -235,6 +237,40 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error('Company info update error:', error);
           toast.error('Falha ao atualizar informações da empresa. Por favor, tente novamente.');
+          set({ isLoading: false });
+          return false;
+        }
+      },
+
+      recoverPassword: async (email: string) => {
+        set({ isLoading: true });
+        try {
+          // Since we're using Google auth only, redirect users to sign in with Google
+          toast.info('Por favor, faça login com sua conta Google');
+          set({ isLoading: false });
+          
+          // We're not actually recovering a password, but returning true to satisfy the interface
+          return true;
+        } catch (error) {
+          console.error('Password recovery error:', error);
+          toast.error('Falha ao processar sua solicitação. Por favor, tente fazer login com Google.');
+          set({ isLoading: false });
+          return false;
+        }
+      },
+
+      signup: async (email: string, password: string, name: string) => {
+        set({ isLoading: true });
+        try {
+          // Since we're using Google auth only, redirect users to sign in with Google
+          toast.info('Por favor, registre-se usando sua conta Google');
+          set({ isLoading: false });
+          
+          // We're not actually signing up with email/password, but returning true to satisfy the interface
+          return true;
+        } catch (error) {
+          console.error('Signup error:', error);
+          toast.error('Falha ao processar seu registro. Por favor, tente se registrar com Google.');
           set({ isLoading: false });
           return false;
         }
