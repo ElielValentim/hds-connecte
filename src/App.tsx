@@ -15,6 +15,10 @@ import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import DevAdmin from "./pages/DevAdmin";
 import NotFound from "./pages/NotFound";
+import Registration from "./pages/Registration";
+import Challenge from "./pages/Challenge";
+import Videos from "./pages/Videos";
+import Notifications from "./pages/Notifications";
 
 const queryClient = new QueryClient();
 
@@ -33,11 +37,10 @@ const App = () => (
             <Route path="/" element={<Home />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/dev-admin" element={<DevAdmin />} />
-            {/* These routes will be implemented in future iterations */}
-            <Route path="/registration" element={<Home />} />
-            <Route path="/challenge" element={<Home />} />
-            <Route path="/videos" element={<Home />} />
-            <Route path="/notifications" element={<Home />} />
+            <Route path="/registration" element={<Registration />} />
+            <Route path="/challenge" element={<Challenge />} />
+            <Route path="/videos" element={<Videos />} />
+            <Route path="/notifications" element={<Notifications />} />
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
