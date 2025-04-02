@@ -62,7 +62,7 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="system">
+    <ThemeProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
