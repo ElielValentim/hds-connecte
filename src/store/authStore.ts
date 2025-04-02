@@ -97,7 +97,13 @@ export const useAuthStore = create<AuthState>()(
               user: mapSupabaseUser(supabaseUser, profileData),
               isAuthenticated: true
             });
+            
+            console.log('Session refreshed successfully:', {
+              user: supabaseUser.email,
+              isAuthenticated: true
+            });
           } else {
+            console.log('No active session found');
             set({
               session: null,
               supabaseUser: null,
@@ -115,12 +121,14 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         
         try {
+          console.log('Attempting login for:', email);
           const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password
           });
           
           if (error) {
+            console.error('Login error:', error.message);
             toast.error(error.message);
             set({ isLoading: false });
             return false;
@@ -128,18 +136,34 @@ export const useAuthStore = create<AuthState>()(
           
           const { session, user: supabaseUser } = data;
           
+          if (!session || !supabaseUser) {
+            console.error('Login failed: No session or user returned');
+            toast.error('Falha ao fazer login. Dados de autenticação inválidos.');
+            set({ isLoading: false });
+            return false;
+          }
+          
+          console.log('Login successful, fetching profile data for user:', supabaseUser.id);
+          
           // Fetch profile data
-          const { data: profileData } = await supabase
+          const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', supabaseUser.id)
             .single();
           
+          if (profileError && profileError.code !== 'PGRST116') {
+            console.error('Error fetching profile:', profileError);
+          }
+          
+          const mappedUser = mapSupabaseUser(supabaseUser, profileData || null);
+          console.log('User mapped:', mappedUser);
+          
           set({
             session,
             supabaseUser,
             profile: profileData || null,
-            user: mapSupabaseUser(supabaseUser, profileData),
+            user: mappedUser,
             isAuthenticated: true,
             isLoading: false
           });
@@ -365,11 +389,13 @@ export const useAuthStore = create<AuthState>()(
 
 // Initialize auth state on app load
 const initializeAuth = async () => {
+  console.log('Initializing auth state...');
   const { refreshSession } = useAuthStore.getState();
   await refreshSession();
 
   // Set up auth state listener
-  supabase.auth.onAuthStateChange(async () => {
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    console.log('Auth state changed:', event);
     await refreshSession();
   });
 };

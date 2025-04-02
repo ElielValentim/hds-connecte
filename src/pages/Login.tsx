@@ -5,13 +5,12 @@ import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useAuthStore } from '@/store/authStore';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/store/authStore';
 
 // Define validation schema
 const loginSchema = z.object({
@@ -41,6 +40,9 @@ const Login = () => {
       if (success) {
         toast.success('Login realizado com sucesso!');
         navigate('/');
+      } else {
+        // If login returns false but no error was thrown
+        toast.error('Credenciais inválidas. Tente novamente.');
       }
     } catch (error) {
       console.error('Login error:', error);

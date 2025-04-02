@@ -5,9 +5,13 @@ import { useAuthStore } from "@/store/authStore";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, refreshSession } = useAuthStore();
   
   useEffect(() => {
+    // Ensure we have the latest session data
+    refreshSession();
+
+    // Only navigate after we've checked authentication status
     if (!isLoading) {
       if (isAuthenticated) {
         navigate("/");
@@ -15,7 +19,7 @@ const Index = () => {
         navigate("/login");
       }
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, navigate, refreshSession]);
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
