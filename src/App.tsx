@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { useAuthStore } from "@/store/authStore";
+import { useEffect } from "react";
 
 // Pages
 import Index from "./pages/Index";
@@ -25,7 +26,11 @@ const queryClient = new QueryClient();
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, refreshSession } = useAuthStore();
+  
+  useEffect(() => {
+    refreshSession();
+  }, [refreshSession]);
   
   // Show loading screen while checking authentication
   if (isLoading) {
@@ -49,7 +54,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Admin route component
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isAuthenticated, isLoading } = useAuthStore();
+  const { user, isAuthenticated, isLoading, refreshSession } = useAuthStore();
+  
+  useEffect(() => {
+    refreshSession();
+  }, [refreshSession]);
   
   // Show loading screen while checking authentication
   if (isLoading) {
@@ -77,7 +86,11 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Public only route (redirect if already logged in)
 const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, refreshSession } = useAuthStore();
+  
+  useEffect(() => {
+    refreshSession();
+  }, [refreshSession]);
   
   // Show loading screen while checking authentication
   if (isLoading) {
@@ -99,38 +112,46 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="dark" forcedTheme="dark">
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/index" element={<Index />} />
-            <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
-            <Route path="/signup" element={<PublicOnlyRoute><Signup /></PublicOnlyRoute>} />
-            <Route path="/recover-password" element={<PublicOnlyRoute><RecoverPassword /></PublicOnlyRoute>} />
-            
-            {/* Protected routes */}
-            <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/registration" element={<ProtectedRoute><Registration /></ProtectedRoute>} />
-            <Route path="/challenge" element={<ProtectedRoute><Challenge /></ProtectedRoute>} />
-            <Route path="/videos" element={<ProtectedRoute><Videos /></ProtectedRoute>} />
-            <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-            
-            {/* Admin routes */}
-            <Route path="/dev-admin" element={<AdminRoute><DevAdmin /></AdminRoute>} />
-            
-            {/* Catch-all route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Initialize auth on app load
+  useEffect(() => {
+    const { refreshSession } = useAuthStore.getState();
+    refreshSession();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="dark" forcedTheme="dark">
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/index" element={<Index />} />
+              <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
+              <Route path="/signup" element={<PublicOnlyRoute><Signup /></PublicOnlyRoute>} />
+              <Route path="/recover-password" element={<PublicOnlyRoute><RecoverPassword /></PublicOnlyRoute>} />
+              
+              {/* Protected routes */}
+              <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/registration" element={<ProtectedRoute><Registration /></ProtectedRoute>} />
+              <Route path="/challenge" element={<ProtectedRoute><Challenge /></ProtectedRoute>} />
+              <Route path="/videos" element={<ProtectedRoute><Videos /></ProtectedRoute>} />
+              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+              
+              {/* Admin routes */}
+              <Route path="/dev-admin" element={<AdminRoute><DevAdmin /></AdminRoute>} />
+              
+              {/* Catch-all route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

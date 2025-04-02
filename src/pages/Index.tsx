@@ -8,18 +8,22 @@ const Index = () => {
   const { isAuthenticated, isLoading, refreshSession } = useAuthStore();
   
   useEffect(() => {
-    // Ensure we have the latest session data
-    refreshSession();
-
-    // Only navigate after we've checked authentication status
-    if (!isLoading) {
-      if (isAuthenticated) {
-        navigate("/");
-      } else {
-        navigate("/login");
+    // Only attempt to refresh the session once
+    const checkAuth = async () => {
+      await refreshSession();
+      
+      // After refreshing, check authentication status
+      if (!isLoading) {
+        if (isAuthenticated) {
+          navigate("/");
+        } else {
+          navigate("/login");
+        }
       }
-    }
-  }, [isAuthenticated, isLoading, navigate, refreshSession]);
+    };
+    
+    checkAuth();
+  }, [isLoading, isAuthenticated, navigate, refreshSession]);
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">

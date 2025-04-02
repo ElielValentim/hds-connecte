@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
@@ -40,8 +41,8 @@ interface AuthState {
   companyInfo: CompanyInfo;
   
   // Actions
-  login: (email: string, password: string) => Promise<boolean>;
-  signup: (email: string, password: string, name: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{success: boolean, error?: string}>;
+  signup: (email: string, password: string, name: string) => Promise<{success: boolean, error?: string}>;
   logout: () => Promise<void>;
   recoverPassword: (email: string) => Promise<boolean>;
   updateProfile: (userData: Partial<Profile>) => Promise<boolean>;
@@ -88,7 +89,7 @@ export const useAuthStore = create<AuthState>()(
               .from('profiles')
               .select('*')
               .eq('id', supabaseUser.id)
-              .single();
+              .maybeSingle();
             
             set({
               session,
@@ -129,18 +130,16 @@ export const useAuthStore = create<AuthState>()(
           
           if (error) {
             console.error('Login error:', error.message);
-            toast.error(error.message);
             set({ isLoading: false });
-            return false;
+            return { success: false, error: error.message };
           }
           
           const { session, user: supabaseUser } = data;
           
           if (!session || !supabaseUser) {
             console.error('Login failed: No session or user returned');
-            toast.error('Falha ao fazer login. Dados de autenticação inválidos.');
             set({ isLoading: false });
-            return false;
+            return { success: false, error: 'Falha ao fazer login. Dados de autenticação inválidos.' };
           }
           
           console.log('Login successful, fetching profile data for user:', supabaseUser.id);
@@ -150,9 +149,9 @@ export const useAuthStore = create<AuthState>()(
             .from('profiles')
             .select('*')
             .eq('id', supabaseUser.id)
-            .single();
+            .maybeSingle();
           
-          if (profileError && profileError.code !== 'PGRST116') {
+          if (profileError) {
             console.error('Error fetching profile:', profileError);
           }
           
@@ -168,13 +167,11 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false
           });
           
-          toast.success('Login realizado com sucesso!');
-          return true;
-        } catch (error) {
+          return { success: true };
+        } catch (error: any) {
           console.error('Login error:', error);
-          toast.error('Falha ao fazer login. Por favor, tente novamente.');
           set({ isLoading: false });
-          return false;
+          return { success: false, error: error?.message || 'Falha ao fazer login. Por favor, tente novamente.' };
         }
       },
       
@@ -189,74 +186,29 @@ export const useAuthStore = create<AuthState>()(
               data: {
                 name
               },
-              // No emailRedirectTo option here, as we don't want email confirmation
+              emailRedirectTo: `${window.location.origin}/login`,
             }
           });
           
           if (error) {
-            toast.error(error.message);
             set({ isLoading: false });
-            return false;
+            return { success: false, error: error.message };
           }
           
-          const { session, user: supabaseUser } = data;
+          const { user: supabaseUser } = data;
           
           if (supabaseUser) {
-            const { error: profileError } = await supabase
-              .from('profiles')
-              .upsert({ 
-                id: supabaseUser.id, 
-                name 
-              });
-              
-            if (profileError) {
-              console.error('Error creating profile:', profileError);
-            }
+            // We'll rely on the trigger to create the profile
+            console.log('User created, profile will be created by trigger');
           }
           
-          // Immediately log the user in
-          if (session) {
-            set({
-              session,
-              supabaseUser,
-              profile: { id: supabaseUser?.id || '', name },
-              user: mapSupabaseUser(supabaseUser, { id: supabaseUser?.id || '', name }),
-              isAuthenticated: true,
-              isLoading: false
-            });
-            
-            toast.success('Conta criada com sucesso! Você está logado.');
-            return true;
-          } else {
-            // If we still don't have a session, try to log in manually
-            const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-              email,
-              password
-            });
-            
-            if (loginError) {
-              toast.error('Conta criada, mas não foi possível fazer login automaticamente. Por favor, faça login manualmente.');
-              set({ isLoading: false });
-              return true; // Return true because the account was created
-            }
-            
-            set({
-              session: loginData.session,
-              supabaseUser: loginData.user,
-              profile: { id: loginData.user?.id || '', name },
-              user: mapSupabaseUser(loginData.user, { id: loginData.user?.id || '', name }),
-              isAuthenticated: true,
-              isLoading: false
-            });
-            
-            toast.success('Conta criada com sucesso! Você está logado.');
-            return true;
-          }
-        } catch (error) {
-          console.error('Signup error:', error);
-          toast.error('Falha ao criar conta. Por favor, tente novamente.');
           set({ isLoading: false });
-          return false;
+          toast.success('Conta criada com sucesso! Verifique seu email para confirmar seu cadastro.');
+          return { success: true };
+        } catch (error: any) {
+          console.error('Signup error:', error);
+          set({ isLoading: false });
+          return { success: false, error: error?.message || 'Falha ao criar conta. Por favor, tente novamente.' };
         }
       },
       

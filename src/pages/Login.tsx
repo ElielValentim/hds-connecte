@@ -36,17 +36,25 @@ const Login = () => {
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      const success = await login(data.email, data.password);
-      if (success) {
+      console.log(`Attempting login for: ${data.email}`);
+      const result = await login(data.email, data.password);
+      
+      if (result.success) {
         toast.success('Login realizado com sucesso!');
         navigate('/');
       } else {
-        // If login returns false but no error was thrown
-        toast.error('Credenciais inválidas. Tente novamente.');
+        // Handle specific error types
+        if (result.error?.includes('Email not confirmed')) {
+          toast.error('Email não confirmado. Por favor, verifique seu email para confirmar sua conta.');
+        } else if (result.error?.includes('Invalid login credentials')) {
+          toast.error('Credenciais inválidas. Verifique seu email e senha.');
+        } else {
+          toast.error(result.error || 'Ocorreu um erro durante o login. Tente novamente.');
+        }
       }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('Ocorreu um erro durante o login. Tente novamente.');
+      toast.error('Ocorreu um erro inesperado. Tente novamente mais tarde.');
     }
   };
 
