@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
@@ -165,7 +164,8 @@ export const useAuthStore = create<AuthState>()(
             options: {
               data: {
                 name
-              }
+              },
+              // No emailRedirectTo option here, as we don't want email confirmation
             }
           });
           
@@ -177,8 +177,21 @@ export const useAuthStore = create<AuthState>()(
           
           const { session, user: supabaseUser } = data;
           
+          if (supabaseUser) {
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .upsert({ 
+                id: supabaseUser.id, 
+                name 
+              });
+              
+            if (profileError) {
+              console.error('Error creating profile:', profileError);
+            }
+          }
+          
+          // Immediately log the user in
           if (session) {
-            // If email confirmation is disabled, we'll have a session immediately
             set({
               session,
               supabaseUser,
@@ -188,12 +201,31 @@ export const useAuthStore = create<AuthState>()(
               isLoading: false
             });
             
-            toast.success('Conta criada com sucesso!');
+            toast.success('Conta criada com sucesso! Você está logado.');
             return true;
           } else {
-            // If email confirmation is enabled
-            toast.success('Conta criada! Por favor, verifique seu email para confirmar o cadastro.');
-            set({ isLoading: false });
+            // If we still don't have a session, try to log in manually
+            const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+              email,
+              password
+            });
+            
+            if (loginError) {
+              toast.error('Conta criada, mas não foi possível fazer login automaticamente. Por favor, faça login manualmente.');
+              set({ isLoading: false });
+              return true; // Return true because the account was created
+            }
+            
+            set({
+              session: loginData.session,
+              supabaseUser: loginData.user,
+              profile: { id: loginData.user?.id || '', name },
+              user: mapSupabaseUser(loginData.user, { id: loginData.user?.id || '', name }),
+              isAuthenticated: true,
+              isLoading: false
+            });
+            
+            toast.success('Conta criada com sucesso! Você está logado.');
             return true;
           }
         } catch (error) {
