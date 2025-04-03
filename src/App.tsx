@@ -101,20 +101,23 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const App = () => {
-  // Initialize auth on app load
+  // Initialize auth on app load with proper cleanup
   useEffect(() => {
-    const cleanupPromise = initializeAuth();
+    let unsubscribe: (() => void) | undefined;
     
-    // Ensure proper cleanup of subscriptions to prevent memory leaks
+    const initialize = async () => {
+      try {
+        unsubscribe = await initializeAuth();
+      } catch (error) {
+        console.error("Failed to initialize auth:", error);
+      }
+    };
+    
+    initialize();
+    
     return () => {
-      if (cleanupPromise) {
-        cleanupPromise.then(unsubscribe => {
-          if (typeof unsubscribe === 'function') {
-            unsubscribe();
-          }
-        }).catch(error => {
-          console.error("Error during auth cleanup:", error);
-        });
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
       }
     };
   }, []);

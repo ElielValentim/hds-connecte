@@ -55,12 +55,20 @@ interface AuthState {
 const mapSupabaseUser = (supabaseUser: SupabaseUser | null, profile: Profile | null): User | null => {
   if (!supabaseUser) return null;
   
+  // Check for admin email - we'll consider these emails as admins
+  const adminEmails = [
+    'elielvalentim.dev@gmail.com',
+    'hdsoficial2022@gmail.com'  // Added the new admin email
+  ];
+  
+  const role = adminEmails.includes(supabaseUser.email || '') ? 'dev-admin' : 'user';
+  
   return {
     id: supabaseUser.id,
     email: supabaseUser.email || '',
     name: profile?.name || supabaseUser.email?.split('@')[0] || '',
     photoURL: profile?.photo_url,
-    role: supabaseUser.email === 'elielvalentim.dev@gmail.com' ? 'dev-admin' : 'user'
+    role: role
   };
 };
 
@@ -256,32 +264,29 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         
         try {
-          // Sign out from Supabase authentication
-          await supabase.auth.signOut({ scope: 'global' });
-          
-          // Clear all user data from store
+          // Clear state first to prevent UI flashing
           set({
             user: null,
             supabaseUser: null,
             session: null,
             profile: null,
-            isAuthenticated: false,
-            isLoading: false
+            isAuthenticated: false
           });
           
-          // Clear any application storage that might contain user data
-          if (typeof window !== 'undefined') {
-            // Remove authentication items from localStorage
-            localStorage.removeItem('supabase.auth.token');
-            
-            // Use navigate instead of directly manipulating location for better React integration
-            toast.success('Logout realizado com sucesso');
-            
-            // Redirect to login page after a short delay to allow toast to be seen
-            setTimeout(() => {
-              window.location.href = '/login';
-            }, 500);
-          }
+          // Then sign out from Supabase authentication
+          await supabase.auth.signOut({ scope: 'global' });
+          
+          // Show success message
+          toast.success('Logout realizado com sucesso');
+          
+          // Complete the loading state
+          set({ isLoading: false });
+          
+          // Redirect after toast displays
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 800);
+          
         } catch (error) {
           console.error('Logout error:', error);
           toast.error('Falha ao fazer logout. Por favor, tente novamente.');
@@ -368,12 +373,13 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// Função para inicializar a autenticação que pode ser chamada de componentes
+// Function to initialize auth that can be called from components
 export const initializeAuth = async () => {
   console.log('Initializing auth state...');
   const { refreshSession } = useAuthStore.getState();
   
   try {
+    // First refresh the session to get the current state
     await refreshSession();
 
     // Set up auth state listener
@@ -381,7 +387,7 @@ export const initializeAuth = async () => {
       console.log('Auth state changed:', event);
       
       if (event === 'SIGNED_OUT') {
-        // Ensure isLoading is set to false when user signs out
+        // Immediately update the state when user signs out
         useAuthStore.setState({
           user: null,
           supabaseUser: null,
@@ -396,13 +402,13 @@ export const initializeAuth = async () => {
       }
     });
     
-    // Retorna a função de cleanup para desinscrever
+    // Return the cleanup function
     return () => {
       subscription.unsubscribe();
     };
   } catch (error) {
     console.error('Failed to initialize auth:', error);
-    // Garantir que o isLoading seja definido como false em caso de erro
+    // Make sure isLoading is set to false in case of error
     useAuthStore.setState({ isLoading: false });
   }
 };

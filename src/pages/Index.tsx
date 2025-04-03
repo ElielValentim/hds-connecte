@@ -8,7 +8,7 @@ const Index = () => {
   const { isAuthenticated, isLoading } = useAuthStore();
   
   useEffect(() => {
-    // Redirecionamento simples baseado no estado atual
+    // Simple redirect based on current auth state
     if (!isLoading) {
       if (isAuthenticated) {
         navigate("/", { replace: true });

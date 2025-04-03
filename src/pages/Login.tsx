@@ -38,7 +38,7 @@ const Login = () => {
       
       if (result.success) {
         toast.success('Login bem-sucedido');
-        navigate('/');
+        navigate('/', { replace: true });
       } else if (result.error) {
         toast.error(result.error || 'Ocorreu um erro durante o login. Tente novamente.');
       }
