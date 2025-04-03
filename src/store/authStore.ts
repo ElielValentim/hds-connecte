@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
@@ -40,9 +41,10 @@ interface AuthState {
   companyInfo: CompanyInfo;
   
   // Actions
+  signInWithEmail: (email: string, password: string) => Promise<{success: boolean, error?: string}>;
   signInWithGoogle: () => Promise<{success: boolean, error?: string}>;
-  signup: () => Promise<boolean>;
-  recoverPassword: (email: string) => Promise<boolean>;
+  signup: (email: string, password: string) => Promise<{success: boolean, error?: string}>;
+  recoverPassword: (email: string) => Promise<{success: boolean, error?: string}>;
   logout: () => Promise<void>;
   updateProfile: (userData: Partial<Profile>) => Promise<boolean>;
   updateCompanyInfo: (data: Partial<CompanyInfo>) => Promise<boolean>;
@@ -117,6 +119,51 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       
+      signInWithEmail: async (email: string, password: string) => {
+        set({ isLoading: true });
+        
+        try {
+          console.log('Attempting login with email and password');
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+          
+          if (error) {
+            console.error('Email login error:', error.message);
+            set({ isLoading: false });
+            return { success: false, error: error.message };
+          }
+          
+          const { session, user: supabaseUser } = data;
+          
+          // Fetch profile data if user was authenticated successfully
+          if (supabaseUser) {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', supabaseUser.id)
+              .maybeSingle();
+              
+            set({
+              session,
+              supabaseUser,
+              profile: profileData || null,
+              user: mapSupabaseUser(supabaseUser, profileData),
+              isAuthenticated: true,
+              isLoading: false
+            });
+          }
+          
+          console.log('Email login successful:', supabaseUser?.email);
+          return { success: true };
+        } catch (error: any) {
+          console.error('Email login error:', error);
+          set({ isLoading: false });
+          return { success: false, error: error?.message || 'Falha ao fazer login. Por favor, tente novamente.' };
+        }
+      },
+      
       signInWithGoogle: async () => {
         set({ isLoading: true });
         
@@ -146,29 +193,59 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       
-      signup: async () => {
+      signup: async (email: string, password: string) => {
+        set({ isLoading: true });
+        
         try {
-          toast.info('Você será redirecionado para fazer login com Google');
-          const { signInWithGoogle } = get();
-          const result = await signInWithGoogle();
-          return result.success;
-        } catch (error) {
-          console.error('Signup redirect error:', error);
-          toast.error('Falha ao redirecionar para autenticação Google. Por favor, tente novamente.');
-          return false;
+          console.log('Attempting signup with email and password');
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+          });
+          
+          if (error) {
+            console.error('Signup error:', error.message);
+            set({ isLoading: false });
+            return { success: false, error: error.message };
+          }
+          
+          if (data.user) {
+            toast.success('Conta criada com sucesso! Verifique seu email para confirmar o cadastro.');
+          } else {
+            toast.info('Por favor, verifique seu email para confirmar seu cadastro.');
+          }
+          
+          set({ isLoading: false });
+          return { success: true };
+        } catch (error: any) {
+          console.error('Signup error:', error);
+          set({ isLoading: false });
+          return { success: false, error: error?.message || 'Falha ao criar conta. Por favor, tente novamente.' };
         }
       },
       
       recoverPassword: async (email: string) => {
+        set({ isLoading: true });
+        
         try {
-          toast.info('Para recuperar sua senha, faça login com sua conta Google');
-          const { signInWithGoogle } = get();
-          const result = await signInWithGoogle();
-          return result.success;
-        } catch (error) {
-          console.error('Password recovery redirect error:', error);
-          toast.error('Falha ao redirecionar para autenticação Google. Por favor, tente novamente.');
-          return false;
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/reset-password`,
+          });
+          
+          if (error) {
+            console.error('Password recovery error:', error.message);
+            toast.error(error.message);
+            set({ isLoading: false });
+            return { success: false, error: error.message };
+          }
+          
+          toast.success('Email de recuperação enviado. Por favor, verifique sua caixa de entrada.');
+          set({ isLoading: false });
+          return { success: true };
+        } catch (error: any) {
+          console.error('Password recovery error:', error);
+          set({ isLoading: false });
+          return { success: false, error: error?.message || 'Falha ao enviar email de recuperação. Por favor, tente novamente.' };
         }
       },
       
