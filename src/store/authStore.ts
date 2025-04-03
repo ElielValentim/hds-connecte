@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
@@ -72,7 +71,7 @@ export const useAuthStore = create<AuthState>()(
       session: null,
       profile: null,
       isAuthenticated: false,
-      isLoading: false,
+      isLoading: true,
       companyInfo: {
         name: 'ValenSoft Desenvolvimento',
         logo: '/placeholder.svg',
@@ -97,7 +96,8 @@ export const useAuthStore = create<AuthState>()(
               supabaseUser,
               profile: profileData || null,
               user: mapSupabaseUser(supabaseUser, profileData),
-              isAuthenticated: true
+              isAuthenticated: true,
+              isLoading: false
             });
             
             console.log('Session refreshed successfully:', {
@@ -111,11 +111,13 @@ export const useAuthStore = create<AuthState>()(
               supabaseUser: null,
               profile: null,
               user: null,
-              isAuthenticated: false
+              isAuthenticated: false,
+              isLoading: false
             });
           }
         } catch (error) {
           console.error('Error refreshing session:', error);
+          set({ isLoading: false });
         }
       },
       
@@ -362,18 +364,27 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// DO NOT use hooks outside of React components
-// REMOVED: Initialize auth state on app load code that used hooks outside components
-
-// Instead, add a function that can be called from components
+// Função para inicializar a autenticação que pode ser chamada de componentes
 export const initializeAuth = async () => {
   console.log('Initializing auth state...');
   const { refreshSession } = useAuthStore.getState();
-  await refreshSession();
-
-  // Set up auth state listener
-  supabase.auth.onAuthStateChange(async (event, session) => {
-    console.log('Auth state changed:', event);
+  
+  try {
     await refreshSession();
-  });
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event);
+      await refreshSession();
+    });
+    
+    // Retorna a função de cleanup para desinscrever
+    return () => {
+      subscription.unsubscribe();
+    };
+  } catch (error) {
+    console.error('Failed to initialize auth:', error);
+    // Garantir que o isLoading seja definido como false em caso de erro
+    useAuthStore.setState({ isLoading: false });
+  }
 };

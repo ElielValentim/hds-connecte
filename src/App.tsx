@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,11 +26,7 @@ const queryClient = new QueryClient();
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, isLoading, refreshSession } = useAuthStore();
-  
-  useEffect(() => {
-    refreshSession();
-  }, [refreshSession]);
+  const { isAuthenticated, isLoading } = useAuthStore();
   
   // Show loading screen while checking authentication
   if (isLoading) {
@@ -53,11 +50,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Admin route component
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isAuthenticated, isLoading, refreshSession } = useAuthStore();
-  
-  useEffect(() => {
-    refreshSession();
-  }, [refreshSession]);
+  const { user, isAuthenticated, isLoading } = useAuthStore();
   
   // Show loading screen while checking authentication
   if (isLoading) {
@@ -85,11 +78,7 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Public only route (redirect if already logged in)
 const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, isLoading, refreshSession } = useAuthStore();
-  
-  useEffect(() => {
-    refreshSession();
-  }, [refreshSession]);
+  const { isAuthenticated, isLoading } = useAuthStore();
   
   // Show loading screen while checking authentication
   if (isLoading) {
@@ -114,7 +103,16 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
 const App = () => {
   // Initialize auth on app load
   useEffect(() => {
-    initializeAuth();
+    const cleanup = initializeAuth();
+    
+    // Adiciona o retorno da função de cleanup
+    return () => {
+      if (cleanup) {
+        cleanup.then(unsubscribe => {
+          if (unsubscribe) unsubscribe();
+        });
+      }
+    };
   }, []);
 
   return (

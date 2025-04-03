@@ -5,28 +5,18 @@ import { useAuthStore } from "@/store/authStore";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading, refreshSession } = useAuthStore();
+  const { isAuthenticated, isLoading } = useAuthStore();
   
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        await refreshSession();
-        
-        if (!isLoading) {
-          if (isAuthenticated) {
-            navigate("/");
-          } else {
-            navigate("/login");
-          }
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
+    // Redirecionamento simples baseado no estado atual
+    if (!isLoading) {
+      if (isAuthenticated) {
+        navigate("/");
+      } else {
         navigate("/login");
       }
-    };
-    
-    checkAuth();
-  }, [isLoading, isAuthenticated, navigate, refreshSession]);
+    }
+  }, [isLoading, isAuthenticated, navigate]);
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
