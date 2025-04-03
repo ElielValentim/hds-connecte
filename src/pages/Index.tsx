@@ -11,9 +11,9 @@ const Index = () => {
     // Redirecionamento simples baseado no estado atual
     if (!isLoading) {
       if (isAuthenticated) {
-        navigate("/");
+        navigate("/", { replace: true });
       } else {
-        navigate("/login");
+        navigate("/login", { replace: true });
       }
     }
   }, [isLoading, isAuthenticated, navigate]);

@@ -103,13 +103,17 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
 const App = () => {
   // Initialize auth on app load
   useEffect(() => {
-    const cleanup = initializeAuth();
+    const cleanupPromise = initializeAuth();
     
-    // Adiciona o retorno da função de cleanup
+    // Ensure proper cleanup of subscriptions to prevent memory leaks
     return () => {
-      if (cleanup) {
-        cleanup.then(unsubscribe => {
-          if (unsubscribe) unsubscribe();
+      if (cleanupPromise) {
+        cleanupPromise.then(unsubscribe => {
+          if (typeof unsubscribe === 'function') {
+            unsubscribe();
+          }
+        }).catch(error => {
+          console.error("Error during auth cleanup:", error);
         });
       }
     };

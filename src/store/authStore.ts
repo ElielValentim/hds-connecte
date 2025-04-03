@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
@@ -273,11 +274,14 @@ export const useAuthStore = create<AuthState>()(
             // Remove authentication items from localStorage
             localStorage.removeItem('supabase.auth.token');
             
-            // Navigate the user to the login page
-            window.location.href = '/login';
+            // Use navigate instead of directly manipulating location for better React integration
+            toast.success('Logout realizado com sucesso');
+            
+            // Redirect to login page after a short delay to allow toast to be seen
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 500);
           }
-          
-          toast.success('Logout realizado com sucesso');
         } catch (error) {
           console.error('Logout error:', error);
           toast.error('Falha ao fazer logout. Por favor, tente novamente.');
@@ -375,7 +379,21 @@ export const initializeAuth = async () => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event);
-      await refreshSession();
+      
+      if (event === 'SIGNED_OUT') {
+        // Ensure isLoading is set to false when user signs out
+        useAuthStore.setState({
+          user: null,
+          supabaseUser: null,
+          session: null,
+          profile: null,
+          isAuthenticated: false,
+          isLoading: false
+        });
+      } else {
+        // For other events, refresh the session
+        await refreshSession();
+      }
     });
     
     // Retorna a função de cleanup para desinscrever
