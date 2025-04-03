@@ -114,10 +114,11 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => {
   // Initialize auth on app load
+  const { refreshSession } = useAuthStore();
+  
   useEffect(() => {
-    const { refreshSession } = useAuthStore.getState();
     refreshSession();
-  }, []);
+  }, [refreshSession]);
 
   return (
     <QueryClientProvider client={queryClient}>

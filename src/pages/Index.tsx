@@ -9,14 +9,19 @@ const Index = () => {
   
   useEffect(() => {
     const checkAuth = async () => {
-      await refreshSession();
-      
-      if (!isLoading) {
-        if (isAuthenticated) {
-          navigate("/");
-        } else {
-          navigate("/login");
+      try {
+        await refreshSession();
+        
+        if (!isLoading) {
+          if (isAuthenticated) {
+            navigate("/");
+          } else {
+            navigate("/login");
+          }
         }
+      } catch (error) {
+        console.error("Auth check error:", error);
+        navigate("/login");
       }
     };
     
