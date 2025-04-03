@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
@@ -42,6 +41,8 @@ interface AuthState {
   
   // Actions
   signInWithGoogle: () => Promise<{success: boolean, error?: string}>;
+  signup: () => Promise<boolean>;
+  recoverPassword: (email: string) => Promise<boolean>;
   logout: () => Promise<void>;
   updateProfile: (userData: Partial<Profile>) => Promise<boolean>;
   updateCompanyInfo: (data: Partial<CompanyInfo>) => Promise<boolean>;
@@ -142,6 +143,32 @@ export const useAuthStore = create<AuthState>()(
           console.error('Google login error:', error);
           set({ isLoading: false });
           return { success: false, error: error?.message || 'Falha ao fazer login com Google. Por favor, tente novamente.' };
+        }
+      },
+      
+      signup: async () => {
+        try {
+          toast.info('Você será redirecionado para fazer login com Google');
+          const { signInWithGoogle } = get();
+          const result = await signInWithGoogle();
+          return result.success;
+        } catch (error) {
+          console.error('Signup redirect error:', error);
+          toast.error('Falha ao redirecionar para autenticação Google. Por favor, tente novamente.');
+          return false;
+        }
+      },
+      
+      recoverPassword: async (email: string) => {
+        try {
+          toast.info('Para recuperar sua senha, faça login com sua conta Google');
+          const { signInWithGoogle } = get();
+          const result = await signInWithGoogle();
+          return result.success;
+        } catch (error) {
+          console.error('Password recovery redirect error:', error);
+          toast.error('Falha ao redirecionar para autenticação Google. Por favor, tente novamente.');
+          return false;
         }
       },
       
