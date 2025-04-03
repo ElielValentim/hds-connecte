@@ -1,11 +1,10 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/hooks/use-theme";
-import { useAuthStore } from "@/store/authStore";
+import { useAuthStore, initializeAuth } from "@/store/authStore";
 import { useEffect } from "react";
 
 // Pages
@@ -114,11 +113,9 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => {
   // Initialize auth on app load
-  const { refreshSession } = useAuthStore();
-  
   useEffect(() => {
-    refreshSession();
-  }, [refreshSession]);
+    initializeAuth();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

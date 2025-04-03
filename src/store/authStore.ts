@@ -362,8 +362,11 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// Initialize auth state on app load
-const initializeAuth = async () => {
+// DO NOT use hooks outside of React components
+// REMOVED: Initialize auth state on app load code that used hooks outside components
+
+// Instead, add a function that can be called from components
+export const initializeAuth = async () => {
   console.log('Initializing auth state...');
   const { refreshSession } = useAuthStore.getState();
   await refreshSession();
@@ -374,5 +377,3 @@ const initializeAuth = async () => {
     await refreshSession();
   });
 };
-
-initializeAuth();
