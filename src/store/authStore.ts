@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
@@ -148,8 +149,10 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         
         try {
-          await supabase.auth.signOut();
+          // Sign out from Supabase authentication
+          await supabase.auth.signOut({ scope: 'global' });
           
+          // Clear all user data from store
           set({
             user: null,
             supabaseUser: null,
@@ -158,6 +161,15 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
             isLoading: false
           });
+          
+          // Clear any application storage that might contain user data
+          if (typeof window !== 'undefined') {
+            // Remove authentication items from localStorage
+            localStorage.removeItem('supabase.auth.token');
+            
+            // Navigate the user to the login page
+            window.location.href = '/login';
+          }
           
           toast.success('Logout realizado com sucesso');
         } catch (error) {
