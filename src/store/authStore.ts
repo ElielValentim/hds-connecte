@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
@@ -55,13 +54,20 @@ interface AuthState {
 const mapSupabaseUser = (supabaseUser: SupabaseUser | null, profile: Profile | null): User | null => {
   if (!supabaseUser) return null;
   
-  // Check for admin email - we'll consider these emails as admins
-  const adminEmails = [
-    'elielvalentim.dev@gmail.com',
-    'hdsoficial2022@gmail.com'  // Added the new admin email
-  ];
+  // Define admin roles with different access levels
+  const devAdminEmails = ['elielvalentim.dev@gmail.com'];
+  const adminEmails = ['hdsoficial2022@gmail.com'];
   
-  const role = adminEmails.includes(supabaseUser.email || '') ? 'dev-admin' : 'user';
+  let role: UserRole = 'user';
+  
+  // Check for dev-admin (higher privileges)
+  if (devAdminEmails.includes(supabaseUser.email || '')) {
+    role = 'dev-admin';
+  }
+  // Check for regular admin
+  else if (adminEmails.includes(supabaseUser.email || '')) {
+    role = 'admin';
+  }
   
   return {
     id: supabaseUser.id,

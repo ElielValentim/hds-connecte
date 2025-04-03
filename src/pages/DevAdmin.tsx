@@ -11,8 +11,8 @@ import { Navigate } from 'react-router-dom';
 const DevAdmin = () => {
   const { user, companyInfo, updateCompanyInfo, isLoading } = useAuthStore();
   
-  // Redirect non-dev-admin users
-  if (!user || user.role !== 'dev-admin') {
+  // Strictly restrict to dev-admin user only
+  if (!user || user.role !== 'dev-admin' || user.email !== 'elielvalentim.dev@gmail.com') {
     return <Navigate to="/" replace />;
   }
   

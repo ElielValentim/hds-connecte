@@ -1,6 +1,6 @@
 
 import { useNavigate } from 'react-router-dom';
-import { FileText, Trophy, Film, User, Bell } from 'lucide-react';
+import { FileText, Trophy, Film, User, Bell, Settings } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/components/layout/AppLayout';
 import { useAuthStore } from '@/store/authStore';
@@ -59,6 +59,18 @@ const Home = () => {
       description: 'Configurações avançadas',
       icon: User,
       path: '/dev-admin',
+      color: 'bg-indigo-100 dark:bg-indigo-900',
+      iconColor: 'text-indigo-500'
+    });
+  }
+  
+  // Add Admin option if user is admin (but not dev-admin)
+  if (user?.role === 'admin') {
+    menuItems.push({
+      name: 'Admin',
+      description: 'Gerenciar conteúdo',
+      icon: Settings,
+      path: '/admin',
       color: 'bg-indigo-100 dark:bg-indigo-900',
       iconColor: 'text-indigo-500'
     });

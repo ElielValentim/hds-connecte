@@ -16,6 +16,7 @@ import RecoverPassword from "./pages/RecoverPassword";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import DevAdmin from "./pages/DevAdmin";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Registration from "./pages/Registration";
 import Challenge from "./pages/Challenge";
@@ -69,7 +70,35 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
   
-  if (user?.role !== 'dev-admin' && user?.role !== 'admin') {
+  if (user?.role !== 'admin' && user?.role !== 'dev-admin') {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+// Dev admin route component - only for dev-admin users
+const DevAdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, isAuthenticated, isLoading } = useAuthStore();
+  
+  // Show loading screen while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-gradient mb-4">HDS CONECTE</h1>
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+          <p className="text-lg text-muted-foreground mt-4">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (user?.role !== 'dev-admin') {
     return <Navigate to="/" replace />;
   }
   
@@ -145,7 +174,8 @@ const App = () => {
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               
               {/* Admin routes */}
-              <Route path="/dev-admin" element={<AdminRoute><DevAdmin /></AdminRoute>} />
+              <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+              <Route path="/dev-admin" element={<DevAdminRoute><DevAdmin /></DevAdminRoute>} />
               
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
