@@ -100,7 +100,7 @@ const DevAdmin = () => {
                 />
               </div>
               
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full bg-gold-500 hover:bg-gold-600" disabled={isLoading}>
                 {isLoading ? 'Salvando...' : 'Salvar Alterações'}
               </Button>
             </form>

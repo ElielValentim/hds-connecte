@@ -31,7 +31,7 @@ const AppHeader = () => {
   }, [location.pathname]);
   
   return (
-    <header className="bg-primary text-primary-foreground py-4 px-4 shadow-md">
+    <header className="bg-gold-500 text-primary-foreground py-4 px-4 shadow-md">
       <div className="app-container flex justify-between items-center">
         <div className="flex items-center gap-2">
           {user && (
@@ -39,12 +39,20 @@ const AppHeader = () => {
               variant="ghost"
               size="icon"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden"
+              className="md:hidden text-black"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </Button>
           )}
-          <h1 className="text-xl md:text-2xl font-bold text-white">{title}</h1>
+          
+          <div className="flex items-center gap-2">
+            <img 
+              src="/lovable-uploads/517237b8-3f79-4b2e-9ada-55197aa95076.png" 
+              alt="HDS Logo" 
+              className="h-8 w-8 object-contain"
+            />
+            <h1 className="text-xl md:text-2xl font-bold text-black">{title}</h1>
+          </div>
         </div>
         
         <div className="flex items-center gap-2">
@@ -55,7 +63,7 @@ const AppHeader = () => {
               variant="ghost"
               size="sm"
               onClick={logout}
-              className="text-white"
+              className="text-black"
             >
               Sair
             </Button>
@@ -130,6 +138,17 @@ const AppHeader = () => {
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Dev Admin
+                  </Link>
+                </li>
+              )}
+              {user.role === 'admin' && (
+                <li>
+                  <Link 
+                    to="/admin" 
+                    className="block p-2 hover:bg-muted rounded-md transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Admin
                   </Link>
                 </li>
               )}

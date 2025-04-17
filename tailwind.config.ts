@@ -63,6 +63,32 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
+				gold: {
+					50: '#FDF9E7',
+					100: '#FCF4CF',
+					200: '#F9E99F',
+					300: '#F5DD6F',
+					400: '#F2D24F',
+					500: '#EFC72F', // Logo main gold
+					600: '#C9A11B',
+					700: '#8D7113',
+					800: '#51400B',
+					900: '#292004',
+					950: '#141002',
+				},
+				amber: {
+					50: '#FFFBEB',
+					100: '#FEF3C7',
+					200: '#FDE68A',
+					300: '#FCD34D',
+					400: '#FBBF24',
+					500: '#F59E0B',
+					600: '#D97706',
+					700: '#B45309',
+					800: '#92400E',
+					900: '#78350F',
+					950: '#451A03',
+				},
 				purple: {
 					50: '#f5f3ff',
 					100: '#ede9fe',

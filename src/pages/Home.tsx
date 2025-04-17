@@ -15,40 +15,40 @@ const Home = () => {
       description: 'Inscreva-se para eventos',
       icon: FileText,
       path: '/registration',
-      color: 'bg-purple-100 dark:bg-purple-900',
-      iconColor: 'text-purple-500'
+      color: 'bg-gold-100 dark:bg-gold-900/40',
+      iconColor: 'text-gold-600'
     },
     {
       name: 'Gincana',
       description: 'Participe dos desafios',
       icon: Trophy,
       path: '/challenge',
-      color: 'bg-amber-100 dark:bg-amber-900',
-      iconColor: 'text-amber-500'
+      color: 'bg-amber-100 dark:bg-amber-900/40',
+      iconColor: 'text-amber-600'
     },
     {
       name: 'Vídeos',
       description: 'Assista e compartilhe',
       icon: Film,
       path: '/videos',
-      color: 'bg-blue-100 dark:bg-blue-900',
-      iconColor: 'text-blue-500'
+      color: 'bg-gold-100 dark:bg-gold-900/40',
+      iconColor: 'text-gold-600'
     },
     {
       name: 'Perfil',
       description: 'Gerencie seus dados',
       icon: User,
       path: '/profile',
-      color: 'bg-emerald-100 dark:bg-emerald-900',
-      iconColor: 'text-emerald-500'
+      color: 'bg-amber-100 dark:bg-amber-900/40',
+      iconColor: 'text-amber-600'
     },
     {
       name: 'Notificações',
       description: 'Veja suas mensagens',
       icon: Bell,
       path: '/notifications',
-      color: 'bg-rose-100 dark:bg-rose-900',
-      iconColor: 'text-rose-500'
+      color: 'bg-gold-100 dark:bg-gold-900/40',
+      iconColor: 'text-gold-600'
     },
   ];
   
@@ -57,10 +57,10 @@ const Home = () => {
     menuItems.push({
       name: 'Dev Admin',
       description: 'Configurações avançadas',
-      icon: User,
+      icon: Settings,
       path: '/dev-admin',
-      color: 'bg-indigo-100 dark:bg-indigo-900',
-      iconColor: 'text-indigo-500'
+      color: 'bg-amber-100 dark:bg-amber-900/40',
+      iconColor: 'text-amber-600'
     });
   }
   
@@ -71,8 +71,8 @@ const Home = () => {
       description: 'Gerenciar conteúdo',
       icon: Settings,
       path: '/admin',
-      color: 'bg-indigo-100 dark:bg-indigo-900',
-      iconColor: 'text-indigo-500'
+      color: 'bg-amber-100 dark:bg-amber-900/40',
+      iconColor: 'text-amber-600'
     });
   }
   
@@ -80,6 +80,13 @@ const Home = () => {
     <AppLayout>
       <div className="space-y-6">
         <section className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <img 
+              src="/lovable-uploads/517237b8-3f79-4b2e-9ada-55197aa95076.png" 
+              alt="HDS Logo" 
+              className="h-24 w-24 object-contain"
+            />
+          </div>
           <h1 className="text-3xl font-bold text-gradient mb-2">Bem-vindo(a)!</h1>
           <p className="text-muted-foreground">
             Olá, {user?.name || 'Usuário'}. O que você deseja fazer hoje?
@@ -109,7 +116,7 @@ const Home = () => {
         </section>
         
         <section className="pt-6">
-          <Card className="bg-purple-500 text-white">
+          <Card className="bg-gold-500 text-white">
             <CardContent className="p-6">
               <h3 className="font-bold text-xl mb-2">Próximo evento</h3>
               <p className="opacity-90 mb-4">Assembleia Geral Ordinária - AGO</p>

@@ -53,7 +53,7 @@ const BottomNav = () => {
             className={cn(
               'flex flex-col items-center justify-center py-3 transition-colors',
               location.pathname === item.path
-                ? 'text-primary'
+                ? 'text-gold-600'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
