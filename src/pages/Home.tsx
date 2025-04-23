@@ -5,6 +5,19 @@ import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/components/layout/AppLayout';
 import { useAuthStore } from '@/store/authStore';
 
+// Add pulse highlight animation CSS
+const pulseHighlightStyle = `
+  @keyframes pulseHighlight {
+    0% { background-color: rgba(234, 179, 8, 0.2); }
+    50% { background-color: rgba(234, 179, 8, 0.4); }
+    100% { background-color: transparent; }
+  }
+  
+  .pulse-highlight {
+    animation: pulseHighlight 2s ease-in-out;
+  }
+`;
+
 const Home = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -60,6 +73,9 @@ const Home = () => {
   
   return (
     <AppLayout>
+      {/* Add the style for pulse highlight animation */}
+      <style dangerouslySetInnerHTML={{ __html: pulseHighlightStyle }} />
+      
       <div className="space-y-6">
         <section className="text-center mb-8">
           <div className="flex justify-center mb-4">
