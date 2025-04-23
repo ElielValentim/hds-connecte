@@ -1,4 +1,3 @@
-
 import { useNavigate } from 'react-router-dom';
 import { FileText, Trophy, Film, User, Bell, Settings } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -52,7 +51,6 @@ const Home = () => {
     },
   ];
   
-  // Add Dev Admin option if user is dev-admin
   if (user?.role === 'dev-admin') {
     menuItems.push({
       name: 'Dev Admin',
@@ -64,7 +62,6 @@ const Home = () => {
     });
   }
   
-  // Add Admin option if user is admin (but not dev-admin)
   if (user?.role === 'admin') {
     menuItems.push({
       name: 'Admin',
@@ -116,13 +113,13 @@ const Home = () => {
         </section>
         
         <section className="pt-6">
-          <Card className="bg-gold-500 text-white">
+          <Card className="bg-gold-500 text-black">
             <CardContent className="p-6">
-              <h3 className="font-bold text-xl mb-2">Próximo evento</h3>
-              <p className="opacity-90 mb-4">Assembleia Geral Ordinária - AGO</p>
-              <div className="bg-white/20 rounded-md p-3 text-center">
-                <p className="font-bold">12 de Dezembro de 2023</p>
-                <p className="text-sm opacity-90">Inscrições abertas até 05/12</p>
+              <h3 className="font-bold text-xl mb-2 text-black">Próximo evento</h3>
+              <p className="text-gray-800 mb-4 font-semibold">Assembleia Geral Ordinária - AGO</p>
+              <div className="bg-white/70 rounded-md p-3 text-center shadow-sm">
+                <p className="font-bold text-black text-lg">12 de Dezembro de 2023</p>
+                <p className="text-sm text-gray-700 font-medium">Inscrições abertas até 05/12</p>
               </div>
             </CardContent>
           </Card>
