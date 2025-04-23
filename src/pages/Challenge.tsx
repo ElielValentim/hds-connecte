@@ -1,11 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
-import { Trophy, Plus, FileUp, CheckCircle, Users } from 'lucide-react';
+import { Trophy, Users, CheckCircle, FileUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -149,27 +146,20 @@ const Challenge = () => {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <section className="text-center mb-4">
-          <h1 className="text-3xl font-bold text-gradient mb-2">Gincana por Equipes</h1>
-          <p className="text-muted-foreground">
-            Participe dos desafios e ajude sua equipe a conquistar pontos
-          </p>
-        </section>
-        
-        <section className="mb-6">
-          <Card className="bg-gold-500 text-black">
-            <CardContent className="p-6">
+        <section className="mb-4">
+          <Card className="bg-yellow-500 text-black overflow-hidden">
+            <CardContent className="p-4 text-center">
               <h3 className="font-bold text-xl mb-2 text-black">Próximo evento</h3>
-              <p className="text-gray-800 mb-4 font-semibold">Assembleia Geral Ordinária - AGO</p>
-              <div className="bg-white/70 rounded-md p-3 text-center shadow-sm">
+              <p className="text-gray-800 mb-2 font-semibold">Assembleia Geral Ordinária - AGO</p>
+              <div className="bg-white/70 rounded-md p-2 shadow-sm">
                 <p className="font-bold text-black text-lg">12 de Dezembro de 2023</p>
                 <p className="text-sm text-gray-700 font-medium">Inscrições abertas até 05/12</p>
               </div>
             </CardContent>
           </Card>
         </section>
-
-        <Tabs defaultValue="challenges">
+        
+        <Tabs defaultValue="challenges" className="space-y-4">
           <TabsList className="grid grid-cols-2 mb-4">
             <TabsTrigger value="challenges">
               <Trophy size={16} className="mr-2" /> Desafios
