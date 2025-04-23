@@ -21,7 +21,7 @@ const AppLayout = ({ children, requireAuth = true }: AppLayoutProps) => {
   return (
     <div className="flex flex-col min-h-screen">
       <AppHeader />
-      <main className="flex-1 pb-28 pt-4"> {/* Increased bottom padding to prevent overlap */}
+      <main className="flex-1 pb-32 pt-4"> {/* Increased bottom padding to prevent overlap with nav bar */}
         <div className="app-container container-padding">
           {children}
         </div>

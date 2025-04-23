@@ -15,10 +15,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { Navigate, Link } from 'react-router-dom';
 
+type TeamWithChallenges = Tables<'teams'> & {
+  completedChallengesCount?: number;
+};
+
 const Challenge = () => {
   const { user } = useAuthStore();
   const [challenges, setChallenges] = useState<Tables<'challenges'>[]>([]);
-  const [teams, setTeams] = useState<Tables<'teams'>[]>([]);
+  const [teams, setTeams] = useState<TeamWithChallenges[]>([]);
   const [teamChallenges, setTeamChallenges] = useState<Tables<'team_challenges'>[]>([]);
   const [userTeam, setUserTeam] = useState<Tables<'team_members'> | null>(null);
   const [userTeamDetails, setUserTeamDetails] = useState<Tables<'teams'> | null>(null);
@@ -89,23 +93,44 @@ const Challenge = () => {
   };
 
   const fetchTeams = async () => {
-    const { data, error } = await supabase
+    // First fetch all teams
+    const { data: teamsData, error: teamsError } = await supabase
       .from('teams')
-      .select('*, team_challenges(*)');
+      .select('*');
     
-    if (error) {
+    if (teamsError) {
       toast.error('Erro ao carregar equipes');
-      console.error(error);
-    } else {
-      // Sort teams by number of completed challenges (descending)
-      const sortedTeams = data?.sort((a, b) => {
-        const aCompletedChallenges = a.team_challenges?.filter(tc => tc.status === 'completed')?.length || 0;
-        const bCompletedChallenges = b.team_challenges?.filter(tc => tc.status === 'completed')?.length || 0;
-        return bCompletedChallenges - aCompletedChallenges;
-      }) || [];
-      
-      setTeams(sortedTeams);
+      console.error(teamsError);
+      return;
     }
+
+    // Then fetch all team_challenges
+    const { data: allTeamChallenges, error: challengesError } = await supabase
+      .from('team_challenges')
+      .select('*')
+      .eq('status', 'completed');
+    
+    if (challengesError) {
+      toast.error('Erro ao carregar desafios das equipes');
+      console.error(challengesError);
+      return;
+    }
+    
+    // Calculate completed challenges for each team
+    const teamsWithChallenges = teamsData?.map(team => {
+      const completedChallenges = allTeamChallenges?.filter(tc => tc.team_id === team.id) || [];
+      return {
+        ...team,
+        completedChallengesCount: completedChallenges.length
+      };
+    }) || [];
+
+    // Sort teams by number of completed challenges (descending)
+    const sortedTeams = teamsWithChallenges.sort((a, b) => 
+      (b.completedChallengesCount || 0) - (a.completedChallengesCount || 0)
+    );
+    
+    setTeams(sortedTeams);
   };
 
   const fetchTeamChallenges = async () => {
@@ -160,9 +185,7 @@ const Challenge = () => {
 
   const getTeamCompletedChallenges = (teamId: string) => {
     const team = teams.find(t => t.id === teamId);
-    if (!team || !team.team_challenges) return 0;
-    
-    return team.team_challenges.filter(tc => tc.status === 'completed').length;
+    return team?.completedChallengesCount || 0;
   };
 
   const scrollToUserTeam = () => {
