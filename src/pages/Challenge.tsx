@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Trophy, Plus, FileUp, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,158 +12,207 @@ import AppLayout from '@/components/layout/AppLayout';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { Tables } from '@/integrations/supabase/types';
+import { Navigate, Link } from 'react-router-dom';
 
-// Challenge component implementation
-// This component will display and manage user challenges
 const Challenge = () => {
   const { user } = useAuthStore();
-  const [challenges, setChallenges] = useState([
-    {
-      id: '1',
-      title: 'Desafio de Boas-Vindas',
-      description: 'Compartilhe uma mensagem de boas-vindas para novos membros!',
-      points: 100,
-      active: true
-    },
-    {
-      id: '2',
-      title: 'Desafio da Gratidão',
-      description: 'Expresse gratidão por algo especial em sua vida.',
-      points: 150,
-      active: true
-    },
-    {
-      id: '3',
-      title: 'Desafio da Comunidade',
-      description: 'Participe de um evento comunitário e compartilhe sua experiência.',
-      points: 200,
-      active: false
+  const [challenges, setChallenges] = useState<Tables<'challenges'>[]>([]);
+  const [teamChallenges, setTeamChallenges] = useState<Tables<'team_challenges'>[]>([]);
+  const [userTeam, setUserTeam] = useState<Tables<'team_members'> | null>(null);
+  const [selectedChallenge, setSelectedChallenge] = useState<Tables<'challenges'> | null>(null);
+  const [evidenceUrl, setEvidenceUrl] = useState('');
+
+  // Redirect if not authenticated
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  useEffect(() => {
+    fetchUserTeam();
+    fetchChallenges();
+  }, [user]);
+
+  useEffect(() => {
+    if (userTeam) {
+      fetchTeamChallenges();
     }
-  ]);
-  const [userChallenges, setUserChallenges] = useState([
-    {
-      id: '1',
-      challengeId: '1',
-      completed: true,
-      evidence: 'Link para a mensagem de boas-vindas'
-    },
-    {
-      id: '2',
-      challengeId: '2',
-      completed: false,
-      evidence: null
+  }, [userTeam]);
+
+  const fetchUserTeam = async () => {
+    const { data, error } = await supabase
+      .from('team_members')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('status', 'approved')
+      .single();
+    
+    if (error) {
+      console.error('Erro ao buscar equipe do usuário');
+    } else {
+      setUserTeam(data);
     }
-  ]);
-  const [newChallenge, setNewChallenge] = useState({
-    title: '',
-    description: '',
-    points: 100
-  });
-  const [uploading, setUploading] = useState(false);
-  const [completedCount, setCompletedCount] = useState(1);
-  const [points, setPoints] = useState(100);
-  
-  // Showing the user's name properly in the user challenges
-  const renderUserChallenges = () => {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Meus Desafios</h2>
-          <div className="text-sm text-muted-foreground">
-            <span className="font-medium">{completedCount}</span> de {challenges.length} completados
-          </div>
-        </div>
-        
-        <div className="mb-4">
-          <Progress value={(completedCount / Math.max(challenges.length, 1)) * 100} />
-        </div>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Painel de Pontuação</CardTitle>
-            <CardDescription>
-              Suas conquistas aparecem aqui
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="flex-shrink-0 w-12 h-12 bg-amber-100 dark:bg-amber-900 rounded-full flex items-center justify-center">
-                  <Trophy className="text-amber-500" size={24} />
-                </div>
-                <div>
-                  <p className="font-medium">{user?.name || 'Usuário'}</p>
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-semibold">{points}</span> pontos acumulados
-                  </p>
-                </div>
-              </div>
-              
-              <Separator />
-              
-              <h4 className="text-sm font-semibold">Ranking</h4>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <p>1. {user?.name || 'Usuário'}</p>
-                  <span className="font-medium">{points}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <p>2. Maria Silva</p>
-                  <span>180</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <p>3. João Oliveira</p>
-                  <span>150</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <div className="space-y-4">
-          {challenges.map((challenge) => (
-            <Card key={challenge.id}>
-              <CardHeader>
-                <CardTitle>{challenge.title}</CardTitle>
-                <CardDescription>{challenge.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    Recompensa: <span className="font-semibold">{challenge.points}</span> pontos
-                  </p>
-                  {userChallenges.find(uc => uc.challengeId === challenge.id)?.completed ? (
-                    <div className="flex items-center gap-2 text-green-500">
-                      <CheckCircle size={16} />
-                      <span className="text-xs">Concluído</span>
-                    </div>
-                  ) : (
-                    <Button size="sm">
-                      <FileUp size={16} className="mr-2" />
-                      Enviar Evidência
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+  };
+
+  const fetchChallenges = async () => {
+    const { data, error } = await supabase
+      .from('challenges')
+      .select('*')
+      .eq('active', true);
+    
+    if (error) {
+      toast.error('Erro ao carregar desafios');
+      console.error(error);
+    } else {
+      setChallenges(data || []);
+    }
+  };
+
+  const fetchTeamChallenges = async () => {
+    if (!userTeam) return;
+
+    const { data, error } = await supabase
+      .from('team_challenges')
+      .select('*')
+      .eq('team_id', userTeam.team_id);
+    
+    if (error) {
+      toast.error('Erro ao carregar desafios da equipe');
+      console.error(error);
+    } else {
+      setTeamChallenges(data || []);
+    }
+  };
+
+  const handleSubmitChallenge = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedChallenge || !userTeam) {
+      toast.error('Selecione um desafio e sua equipe');
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('team_challenges')
+      .insert({
+        team_id: userTeam.team_id,
+        challenge_id: selectedChallenge.id,
+        status: 'pending',
+        evidence: evidenceUrl
+      });
+    
+    if (error) {
+      toast.error('Erro ao enviar desafio');
+      console.error(error);
+    } else {
+      toast.success('Desafio enviado para avaliação');
+      fetchTeamChallenges();
+      setSelectedChallenge(null);
+      setEvidenceUrl('');
+    }
+  };
+
+  const isTeamChallengeCompleted = (challengeId: string) => {
+    return teamChallenges.some(
+      (tc) => tc.challenge_id === challengeId && tc.status === 'completed'
     );
   };
-  
-  // Component's return JSX
+
+  if (!userTeam) {
+    return (
+      <AppLayout>
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold">Você ainda não está em uma equipe</h1>
+          <p>Para participar dos desafios, primeiro entre em uma equipe.</p>
+          <Link to="/teams">
+            <Button>Ver Equipes</Button>
+          </Link>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <div className="space-y-6">
         <section className="text-center mb-4">
-          <h1 className="text-3xl font-bold text-gradient mb-2">Gincana</h1>
+          <h1 className="text-3xl font-bold text-gradient mb-2">Gincana por Equipes</h1>
           <p className="text-muted-foreground">
-            Participe dos desafios e ganhe recompensas
+            Participe dos desafios e ajude sua equipe a conquistar pontos
           </p>
         </section>
         
-        {renderUserChallenges()}
+        <section>
+          <Card>
+            <CardHeader>
+              <CardTitle>Desafios Disponíveis</CardTitle>
+              <CardDescription>
+                Selecione um desafio para completar com sua equipe
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {challenges.map((challenge) => (
+                <div 
+                  key={challenge.id} 
+                  className={`border rounded-lg p-4 ${
+                    isTeamChallengeCompleted(challenge.id) 
+                    ? 'bg-green-50 border-green-200' 
+                    : 'hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-semibold">{challenge.title}</h3>
+                      <p className="text-sm text-muted-foreground">{challenge.description}</p>
+                    </div>
+                    {isTeamChallengeCompleted(challenge.id) ? (
+                      <div className="text-green-600 flex items-center">
+                        <CheckCircle className="mr-2" /> Concluído
+                      </div>
+                    ) : (
+                      <Sheet>
+                        <SheetTrigger asChild>
+                          <Button 
+                            size="sm" 
+                            onClick={() => setSelectedChallenge(challenge)}
+                          >
+                            <FileUp size={16} className="mr-2" /> Enviar Evidência
+                          </Button>
+                        </SheetTrigger>
+                        <SheetContent>
+                          <SheetHeader>
+                            <SheetTitle>Enviar Evidência de Desafio</SheetTitle>
+                          </SheetHeader>
+                          <form onSubmit={handleSubmitChallenge} className="space-y-4 mt-4">
+                            <div className="space-y-2">
+                              <Label>Desafio</Label>
+                              <Input 
+                                value={selectedChallenge?.title || ''} 
+                                readOnly 
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>URL da Evidência</Label>
+                              <Input 
+                                placeholder="Link para comprovação do desafio" 
+                                value={evidenceUrl}
+                                onChange={(e) => setEvidenceUrl(e.target.value)}
+                                required
+                              />
+                            </div>
+                            <Button type="submit" className="w-full">
+                              Enviar Evidência
+                            </Button>
+                          </form>
+                        </SheetContent>
+                      </Sheet>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </section>
       </div>
     </AppLayout>
   );

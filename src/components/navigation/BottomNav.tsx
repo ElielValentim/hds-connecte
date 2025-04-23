@@ -1,5 +1,5 @@
 
-import { Home, User, Bell, Film, Trophy, FileText } from 'lucide-react';
+import { Home, User, Bell, Film, Trophy, Users } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
@@ -17,9 +17,9 @@ const BottomNav = () => {
       path: '/',
     },
     {
-      name: 'Cadastro',
-      icon: FileText,
-      path: '/registration',
+      name: 'Equipes',
+      icon: Users,
+      path: '/teams',
     },
     {
       name: 'Gincana',
@@ -36,17 +36,20 @@ const BottomNav = () => {
       icon: User,
       path: '/profile',
     },
-    {
-      name: 'Notificações',
-      icon: Bell,
-      path: '/notifications',
-    },
   ];
+  
+  if (user.role === 'admin' || user.role === 'dev-admin') {
+    navItems.splice(1, 0, {
+      name: 'Admin',
+      icon: Bell,
+      path: '/team-management',
+    });
+  }
   
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
       <div className="app-container grid grid-cols-5 text-xs font-medium">
-        {navItems.slice(0, 5).map((item) => (
+        {navItems.map((item) => (
           <Link
             key={item.path}
             to={item.path}

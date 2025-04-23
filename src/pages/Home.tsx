@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { FileText, Trophy, Film, User, Bell, Settings } from 'lucide-react';
+import { FileText, Trophy, Film, User, Bell, Settings, Users } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/components/layout/AppLayout';
 import { useAuthStore } from '@/store/authStore';
@@ -10,20 +10,20 @@ const Home = () => {
   
   const menuItems = [
     {
-      name: 'Cadastro',
-      description: 'Inscreva-se para eventos',
-      icon: FileText,
-      path: '/registration',
-      color: 'bg-gold-100 dark:bg-gold-900/40',
-      iconColor: 'text-gold-600'
+      name: 'Equipes',
+      description: 'Participe de uma equipe',
+      icon: Users,
+      path: '/teams',
+      color: 'bg-amber-100 dark:bg-amber-900/40',
+      iconColor: 'text-amber-600'
     },
     {
       name: 'Gincana',
       description: 'Participe dos desafios',
       icon: Trophy,
       path: '/challenge',
-      color: 'bg-amber-100 dark:bg-amber-900/40',
-      iconColor: 'text-amber-600'
+      color: 'bg-gold-100 dark:bg-gold-900/40',
+      iconColor: 'text-gold-600'
     },
     {
       name: 'Vídeos',

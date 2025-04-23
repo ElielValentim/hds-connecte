@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +21,8 @@ import Registration from "./pages/Registration";
 import Challenge from "./pages/Challenge";
 import Videos from "./pages/Videos";
 import Notifications from "./pages/Notifications";
+import TeamManagement from './pages/TeamManagement';
+import Teams from './pages/Teams';
 
 const queryClient = new QueryClient();
 
@@ -176,6 +177,10 @@ const App = () => {
               {/* Admin routes */}
               <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
               <Route path="/dev-admin" element={<DevAdminRoute><DevAdmin /></DevAdminRoute>} />
+              
+              {/* Team routes */}
+              <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
+              <Route path="/team-management" element={<AdminRoute><TeamManagement /></AdminRoute>} />
               
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
