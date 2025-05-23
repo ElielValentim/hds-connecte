@@ -1,16 +1,14 @@
 
 import { useState, useEffect } from 'react';
-import { Menu, X, ChevronDown } from 'lucide-react';
-import { useLocation, Link } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/authStore';
 import { useTheme } from '@/hooks/use-theme';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { navItems, getAdminItems } from './navigation/navItems';
+import MobileMenu from './navigation/MobileMenu';
+import DesktopNav from './navigation/DesktopNav';
+import UserMenu from './navigation/UserMenu';
 
 const AppHeader = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -37,22 +35,8 @@ const AppHeader = () => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
-  // Define nav items for better organization
-  const navItems = [
-    { name: 'Início', path: '/' },
-    { name: 'Meu Perfil', path: '/profile' },
-    { name: 'Cadastro', path: '/registration' },
-    { name: 'Gincana', path: '/challenge' },
-    { name: 'Vídeos', path: '/videos' },
-    { name: 'Notificações', path: '/notifications' },
-    { name: 'Equipes', path: '/teams' },
-  ];
-  
-  // Add admin items conditionally
-  const adminItems = [
-    ...(user?.role === 'dev-admin' ? [{ name: 'Dev Admin', path: '/dev-admin' }] : []),
-    ...(user?.role === 'admin' ? [{ name: 'Admin', path: '/admin' }] : []),
-  ];
+  // Get admin items if user has admin role
+  const adminItems = user ? getAdminItems(user.role) : [];
   
   return (
     <header className="bg-yellow-500 text-white py-4 px-4 shadow-md">
@@ -81,120 +65,28 @@ const AppHeader = () => {
         
         {/* Desktop Navigation Menu */}
         {user && (
-          <div className="hidden md:flex items-center gap-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  location.pathname === item.path 
-                    ? 'bg-yellow-600 text-white' 
-                    : 'text-white hover:bg-yellow-600'
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
-            
-            {/* Admin dropdown only if user has admin privileges */}
-            {adminItems.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-white border-yellow-400 bg-yellow-600 hover:bg-yellow-700"
-                  >
-                    Admin <ChevronDown className="ml-1 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40 bg-yellow-500">
-                  {adminItems.map((item) => (
-                    <DropdownMenuItem key={item.path} asChild>
-                      <Link to={item.path} className="w-full text-white hover:bg-yellow-600">
-                        {item.name}
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
+          <DesktopNav 
+            navItems={navItems} 
+            adminItems={adminItems}
+            currentPath={location.pathname} 
+          />
         )}
         
         <div className="flex items-center gap-2">
-          {user && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-white border-yellow-400 bg-yellow-600 hover:bg-yellow-700"
-                >
-                  Opções <ChevronDown className="ml-1 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40 bg-yellow-500">
-                <DropdownMenuItem onClick={logout} className="text-white hover:bg-yellow-600">
-                  Sair
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          {user && <UserMenu onLogout={logout} />}
         </div>
       </div>
       
       {/* Mobile menu */}
-      {isMobileMenuOpen && user && (
-        <div className="absolute top-16 left-0 right-0 bg-yellow-500 border-b border-yellow-600 z-50 shadow-lg animate-fade-in md:hidden">
-          <nav className="app-container py-4">
-            <ul className="space-y-0">
-              {navItems.map((item) => (
-                <li key={item.path}>
-                  <Link 
-                    to={item.path} 
-                    className={`block py-3 px-4 text-base transition-colors ${
-                      location.pathname === item.path 
-                        ? 'bg-yellow-600 font-semibold text-white' 
-                        : 'hover:bg-yellow-600 text-white'
-                    }`}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
-              
-              {adminItems.map((item) => (
-                <li key={item.path}>
-                  <Link 
-                    to={item.path} 
-                    className={`block py-3 px-4 text-base font-medium transition-colors ${
-                      location.pathname === item.path 
-                        ? 'bg-yellow-600 font-semibold text-white' 
-                        : 'hover:bg-yellow-600 text-white'
-                    }`}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
-              
-              <li>
-                <button 
-                  onClick={() => {
-                    logout();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="block w-full text-left py-3 px-4 text-base text-white hover:bg-yellow-600 transition-colors"
-                >
-                  Sair
-                </button>
-              </li>
-            </ul>
-          </nav>
-        </div>
+      {user && (
+        <MobileMenu 
+          isOpen={isMobileMenuOpen}
+          navItems={navItems}
+          adminItems={adminItems}
+          currentPath={location.pathname}
+          onClose={() => setIsMobileMenuOpen(false)}
+          onLogout={logout}
+        />
       )}
     </header>
   );
