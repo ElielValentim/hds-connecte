@@ -55,7 +55,7 @@ const AppHeader = () => {
   ];
   
   return (
-    <header className="bg-gold-500 text-primary-foreground py-4 px-4 shadow-md">
+    <header className="bg-yellow-500 text-white py-4 px-4 shadow-md">
       <div className="app-container flex justify-between items-center">
         <div className="flex items-center gap-2">
           {user && (
@@ -63,7 +63,7 @@ const AppHeader = () => {
               variant="ghost"
               size="icon"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden text-black"
+              className="md:hidden text-white"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </Button>
@@ -75,21 +75,21 @@ const AppHeader = () => {
               alt="HDS Logo" 
               className="h-8 w-8 object-contain"
             />
-            <h1 className="text-xl md:text-2xl font-bold text-black">{title}</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-white">{title}</h1>
           </div>
         </div>
         
-        {/* Desktop Navigation Menu - Always visible on MD screens and larger */}
+        {/* Desktop Navigation Menu */}
         {user && (
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   location.pathname === item.path 
-                    ? 'bg-gold-600 text-white' 
-                    : 'text-black hover:bg-gold-400'
+                    ? 'bg-yellow-600 text-white' 
+                    : 'text-white hover:bg-yellow-600'
                 }`}
               >
                 {item.name}
@@ -103,15 +103,15 @@ const AppHeader = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-black border-gold-600 bg-gold-300 hover:bg-gold-400"
+                    className="text-white border-yellow-400 bg-yellow-600 hover:bg-yellow-700"
                   >
                     Admin <ChevronDown className="ml-1 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40 bg-white">
+                <DropdownMenuContent align="end" className="w-40 bg-yellow-500">
                   {adminItems.map((item) => (
                     <DropdownMenuItem key={item.path} asChild>
-                      <Link to={item.path} className="w-full">
+                      <Link to={item.path} className="w-full text-white hover:bg-yellow-600">
                         {item.name}
                       </Link>
                     </DropdownMenuItem>
@@ -129,13 +129,13 @@ const AppHeader = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-black border-gold-600 bg-gold-300 hover:bg-gold-400"
+                  className="text-white border-yellow-400 bg-yellow-600 hover:bg-yellow-700"
                 >
                   Opções <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40 bg-white">
-                <DropdownMenuItem onClick={logout}>
+              <DropdownMenuContent align="end" className="w-40 bg-yellow-500">
+                <DropdownMenuItem onClick={logout} className="text-white hover:bg-yellow-600">
                   Sair
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -144,9 +144,9 @@ const AppHeader = () => {
         </div>
       </div>
       
-      {/* Mobile menu - Full width, easy to read */}
+      {/* Mobile menu */}
       {isMobileMenuOpen && user && (
-        <div className="absolute top-16 left-0 right-0 bg-gold-50 border-b border-gold-200 z-50 shadow-lg animate-fade-in md:hidden">
+        <div className="absolute top-16 left-0 right-0 bg-yellow-500 border-b border-yellow-600 z-50 shadow-lg animate-fade-in md:hidden">
           <nav className="app-container py-4">
             <ul className="space-y-0">
               {navItems.map((item) => (
@@ -155,8 +155,8 @@ const AppHeader = () => {
                     to={item.path} 
                     className={`block py-3 px-4 text-base transition-colors ${
                       location.pathname === item.path 
-                        ? 'bg-gold-300 font-semibold text-black' 
-                        : 'hover:bg-gold-200 text-black'
+                        ? 'bg-yellow-600 font-semibold text-white' 
+                        : 'hover:bg-yellow-600 text-white'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -171,8 +171,8 @@ const AppHeader = () => {
                     to={item.path} 
                     className={`block py-3 px-4 text-base font-medium transition-colors ${
                       location.pathname === item.path 
-                        ? 'bg-gold-300 font-semibold text-black' 
-                        : 'hover:bg-gold-200 text-black'
+                        ? 'bg-yellow-600 font-semibold text-white' 
+                        : 'hover:bg-yellow-600 text-white'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -187,7 +187,7 @@ const AppHeader = () => {
                     logout();
                     setIsMobileMenuOpen(false);
                   }}
-                  className="block w-full text-left py-3 px-4 text-base text-red-600 hover:bg-gold-200 transition-colors"
+                  className="block w-full text-left py-3 px-4 text-base text-white hover:bg-yellow-600 transition-colors"
                 >
                   Sair
                 </button>
