@@ -11,15 +11,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
 
 const AppHeader = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -39,6 +30,7 @@ const AppHeader = () => {
     else if (path === '/videos') setTitle('Vídeos');
     else if (path === '/notifications') setTitle('Notificações');
     else if (path === '/dev-admin') setTitle('Dev Admin');
+    else if (path === '/teams') setTitle('Equipes');
     else setTitle('HDS CONECTE');
     
     // Close mobile menu on route change
@@ -53,6 +45,7 @@ const AppHeader = () => {
     { name: 'Gincana', path: '/challenge' },
     { name: 'Vídeos', path: '/videos' },
     { name: 'Notificações', path: '/notifications' },
+    { name: 'Equipes', path: '/teams' },
   ];
   
   // Add admin items conditionally
@@ -86,56 +79,46 @@ const AppHeader = () => {
           </div>
         </div>
         
-        {/* Desktop Navigation Menu - Visible on MD screens and larger */}
+        {/* Desktop Navigation Menu - Always visible on MD screens and larger */}
         {user && (
-          <div className="hidden md:flex items-center">
-            <NavigationMenu className="mx-auto">
-              <NavigationMenuList>
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="bg-transparent hover:bg-gold-600 text-black">Navegação</NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <ul className="grid w-[400px] gap-1 p-2 md:w-[500px] grid-cols-2">
-                      {navItems.map((item) => (
-                        <li key={item.path}>
-                          <NavigationMenuLink asChild>
-                            <Link
-                              to={item.path}
-                              className={`block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors 
-                                hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground 
-                                ${location.pathname === item.path ? 'bg-gold-600 text-white' : 'text-black'}`}
-                            >
-                              <div className="text-sm font-medium leading-none">{item.name}</div>
-                            </Link>
-                          </NavigationMenuLink>
-                        </li>
-                      ))}
-                    </ul>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-
-                {adminItems.length > 0 && (
-                  <NavigationMenuItem>
-                    <NavigationMenuTrigger className="bg-transparent hover:bg-gold-600 text-black">Admin</NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <ul className="grid w-[200px] gap-1 p-2">
-                        {adminItems.map((item) => (
-                          <li key={item.path}>
-                            <NavigationMenuLink asChild>
-                              <Link
-                                to={item.path}
-                                className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                              >
-                                <div className="text-sm font-medium leading-none">{item.name}</div>
-                              </Link>
-                            </NavigationMenuLink>
-                          </li>
-                        ))}
-                      </ul>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
-                )}
-              </NavigationMenuList>
-            </NavigationMenu>
+          <div className="hidden md:flex items-center gap-2">
+            {navItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  location.pathname === item.path 
+                    ? 'bg-gold-600 text-white' 
+                    : 'text-black hover:bg-gold-400'
+                }`}
+              >
+                {item.name}
+              </Link>
+            ))}
+            
+            {/* Admin dropdown only if user has admin privileges */}
+            {adminItems.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-black border-gold-600 bg-gold-300 hover:bg-gold-400"
+                  >
+                    Admin <ChevronDown className="ml-1 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40 bg-white">
+                  {adminItems.map((item) => (
+                    <DropdownMenuItem key={item.path} asChild>
+                      <Link to={item.path} className="w-full">
+                        {item.name}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         )}
         
@@ -151,7 +134,7 @@ const AppHeader = () => {
                   Opções <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuContent align="end" className="w-40 bg-white">
                 <DropdownMenuItem onClick={logout}>
                   Sair
                 </DropdownMenuItem>
@@ -161,17 +144,19 @@ const AppHeader = () => {
         </div>
       </div>
       
-      {/* Mobile menu */}
+      {/* Mobile menu - Full width, easy to read */}
       {isMobileMenuOpen && user && (
-        <div className="absolute top-16 left-0 right-0 bg-background border-b border-border z-50 shadow-lg animate-fade-in md:hidden">
+        <div className="absolute top-16 left-0 right-0 bg-gold-50 border-b border-gold-200 z-50 shadow-lg animate-fade-in md:hidden">
           <nav className="app-container py-4">
-            <ul className="space-y-2">
+            <ul className="space-y-0">
               {navItems.map((item) => (
                 <li key={item.path}>
                   <Link 
                     to={item.path} 
-                    className={`block p-3 hover:bg-muted rounded-md transition-colors ${
-                      location.pathname === item.path ? 'bg-gold-200 font-semibold' : ''
+                    className={`block py-3 px-4 text-base transition-colors ${
+                      location.pathname === item.path 
+                        ? 'bg-gold-300 font-semibold text-black' 
+                        : 'hover:bg-gold-200 text-black'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -184,8 +169,10 @@ const AppHeader = () => {
                 <li key={item.path}>
                   <Link 
                     to={item.path} 
-                    className={`block p-3 hover:bg-muted rounded-md transition-colors ${
-                      location.pathname === item.path ? 'bg-gold-200 font-semibold' : ''
+                    className={`block py-3 px-4 text-base font-medium transition-colors ${
+                      location.pathname === item.path 
+                        ? 'bg-gold-300 font-semibold text-black' 
+                        : 'hover:bg-gold-200 text-black'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -193,6 +180,18 @@ const AppHeader = () => {
                   </Link>
                 </li>
               ))}
+              
+              <li>
+                <button 
+                  onClick={() => {
+                    logout();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left py-3 px-4 text-base text-red-600 hover:bg-gold-200 transition-colors"
+                >
+                  Sair
+                </button>
+              </li>
             </ul>
           </nav>
         </div>
